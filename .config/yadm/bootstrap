@@ -1,0 +1,94 @@
+#!/bin/sh
+
+# Because Git submodule commands cannot operate without a work tree, they must
+# be run from within $HOME (assuming this is the root of your dotfiles)
+cd "$HOME"
+
+system_type=$(uname -s)
+
+if [ "$system_type" = "Darwin" ]; then
+  # install homebrew if it's missing
+  if ! command -v brew >/dev/null 2>&1; then
+    echo "Installing homebrew"
+    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+  fi
+
+  if [ -f "$HOME/.Brewfile" ]; then
+    echo "Updating homebrew bundle"
+    # Todo probably need to make this global and change it to
+    # brew bundle --global
+    brew bundle install --file ./Brewfile
+  fi
+fi
+
+yadm clone https://github.com/marcodejongh/marcos-yadm-dotfiles.git
+
+if [ ! -d "$HOME/.zprezto" ]; then
+    echo "Install zpresto"
+    git clone --recursive https://github.com/sorin-ionescu/prezto.git "${HOME}/.zprezto"
+fi
+
+if ! command -v fzf >/dev/null 2>&1; then
+    echo installing fzf
+    $HOME/.zprezto/contrib/fzf/external/install --bin
+fi
+
+if [ ! -d "$HOME/.zprezto/contrib/fzf" ]; then
+    echo installing fzf-prezto
+    mkdir -p $HOME/.zprezto/contrib && cd $_
+    git clone https://github.com/gpanders/fzf-prezto.git fzf
+    cd fzf
+    git submodule update --init
+    cd $HOME
+fi
+
+if [ ! -d "$HOME/.zprezto/contrib/fzf-tab" ]; then
+    echo installing fzf-tab
+    mkdir -p $HOME/.zprezto/contrib && cd $_
+    git clone https://github.com/Aloxaf/fzf-tab $HOME/.zprezto/contrib/fzf-tab
+    cd fzf
+    git submodule update --init
+    cd $HOME
+fi
+
+
+if [ "$system_type" = "Darwin" ]; then
+    if [ ! -f "$HOME/Library/Fonts/MesloLGS NF Regular.ttf" ]; then
+        echo "Installing fonts"
+        curl -L -o $HOME/Library/Fonts/MesloLGS\ NF\ Regular.ttf https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf
+        curl -L -o $HOME/Library/Fonts/MesloLGS\ NF\ Bold.ttf https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
+        curl -L -o $HOME/Library/Fonts/MesloLGS\ NF\ Italic.ttf https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
+        curl -L -o $HOME/Library/Fonts/MesloLGS\ NF\ Bold\ Italic.ttf https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
+    fi
+    # This didnt work for some reason:
+    # if [ -d " /Applications/1Password.app/" ]; then
+    if [ ! -z $(ls /Applications/ | grep -q -i '1Password')]; then
+        echo "Installing 1password"
+        mkdir -p $HOME/tmp/yadm-bootstrap;
+        cd $HOME/tmp/yadm-bootstrap;
+        curl -L -O https://downloads.1password.com/mac/1Password.zip
+        unzip 1Password.zip
+        open -W 1Password\ Installer.app
+    fi
+
+    if [ ! -z $(ls /Applications/ | grep -q -i 'Visual Studio Code')]; then
+        echo "Installing VSCode"
+        mkdir -p $HOME/tmp/yadm-bootstrap;
+        curl -L -O https://downloads.1password.com/mac/1Password.zip
+        curl -L -o $HOME/tmp/yadm-bootstrap/VSCode-darwin-universal.zip 'https://code.visualstudio.com/sha/download?build=stable&os=darwin-universal'
+        unzip 1Password.zip
+        open -W 1Password\ Installer.app
+    fi
+else
+    echo "Not installing powerline10k fonts because not running on macos"
+fi 
+
+if yadm remote get-url origin | grep -q -v 'git@github.com:marcodejongh/marcos-yadm-dotfiles.git'; then
+    echo "Detected raw yadm checkout, performing yadm admin"
+
+    echo "Init submodules"
+    yadm submodule update --recursive --init
+
+    echo "Updating the yadm repo origin URL"
+    yadm remote set-url origin "git@github.com:marcodejongh/marcos-yadm-dotfiles.git"
+fi
