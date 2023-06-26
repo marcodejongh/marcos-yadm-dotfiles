@@ -1,7 +1,7 @@
+[user]
+	name = Marco de Jongh
+	email = 1107647+marcodejongh@users.noreply.github.com
 # Intentionally made this strict so I dont accidentally use the wrong user info
-[includeIf "gitdir:~/Projects/github/.gitconfig"]
-	path = ~/github/.gitconfig
-
 [includeIf "gitdir:~/Projects/atlassian/"]
     path = ~/atlassian/.gitconfig
 

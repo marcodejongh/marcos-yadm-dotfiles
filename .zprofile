@@ -1,4 +1,8 @@
-eval "$(/opt/homebrew/bin/brew shellenv)"
+#!/bin/sh
+
+if [ ! -d "$HOME/.zprezto/contrib/fzf-tab" ]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
 
 #
 # Executes commands at login pre-zshrc.
@@ -71,6 +75,8 @@ fi
 
 # Set the Less input preprocessor.
 # Try both `lesspipe` and `lesspipe.sh` as either might exist on a system.
+# This is broken and cant be bothered to figure out why RN
 if [[ -z "$LESSOPEN" ]] && (( $#commands[(i)lesspipe(|.sh)] )); then
-  export LESSOPEN="| /usr/bin/env $commands[(i)lesspipe(|.sh)] %s 2>&-"
+ export LESSOPEN="| /usr/bin/env $commands[(i)lesspipe(|.sh)] %s 2>&-";
 fi
+

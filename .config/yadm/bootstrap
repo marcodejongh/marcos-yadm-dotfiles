@@ -21,6 +21,8 @@ if [ "$system_type" = "Darwin" ]; then
   fi
 fi
 
+nvm install --lts
+
 yadm clone https://github.com/marcodejongh/marcos-yadm-dotfiles.git
 
 if [ ! -d "$HOME/.zprezto" ]; then
@@ -91,4 +93,8 @@ if yadm remote get-url origin | grep -q -v 'git@github.com:marcodejongh/marcos-y
 
     echo "Updating the yadm repo origin URL"
     yadm remote set-url origin "git@github.com:marcodejongh/marcos-yadm-dotfiles.git"
+
+    # Since I do fancy stuff with git configs I need this
+    yadm gitconfig "user.name" "Marco de Jongh"
+    yadm gitconfig "user.email" "1107647+marcodejongh@users.noreply.github.com"
 fi
