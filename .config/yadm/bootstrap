@@ -5,7 +5,7 @@
 cd "$HOME"
 set -e 
 
-echo_ok "Install starting..."
+echo "Install starting..."
 
 if ask "Decrypt files from yadm?" N; then
 
@@ -14,7 +14,7 @@ if ask "Decrypt files from yadm?" N; then
     # decrypt files
     yadm decrypt
 else
-    echo_ok "Skipping decrpyt step"
+    echo "Skipping decrpyt step"
 fi
 
 # requires xcode and tools!
@@ -28,7 +28,7 @@ if ask "Perform latest apple update?" N; then
     echo_warn "Updating to latest apple software"
     sudo softwareupdate -i -a
 else
-    echo_ok "Skipping apple update"
+    echo "Skipping apple update"
 fi
 
 system_type=$(uname -s)
@@ -36,7 +36,7 @@ system_type=$(uname -s)
 if [ "$system_type" = "Darwin" ]; then
   # homebrew
     if command_exists brew; then
-        echo_ok "Homebrew already installed. Getting updates..."
+        echo "Homebrew already installed. Getting updates..."
         brew update
         brew doctor
     else
@@ -45,7 +45,7 @@ if [ "$system_type" = "Darwin" ]; then
     fi
 
     if brew bundle check --global; then
-        echo_ok "Brew packages up to date."
+        echo "Brew packages up to date."
     else
         echo_warn "Syncing brew packages with brew bundle"
         brew bundle install --global
