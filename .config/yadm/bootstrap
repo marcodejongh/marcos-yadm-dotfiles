@@ -5,21 +5,51 @@
 cd "$HOME"
 set -e 
 
+echo_ok "Install starting..."
+
+if ask "Decrypt files from yadm?" N; then
+
+    echo_warn "Decrypting files..."
+
+    # decrypt files
+    yadm decrypt
+else
+    echo_ok "Skipping decrpyt step"
+fi
+
+# requires xcode and tools!
+xcode-select -p || {
+    echo_error "XCode must be installed! (run xcode-select --install)"
+    exit 1
+}
+
+# update your computer
+if ask "Perform latest apple update?" N; then
+    echo_warn "Updating to latest apple software"
+    sudo softwareupdate -i -a
+else
+    echo_ok "Skipping apple update"
+fi
+
 system_type=$(uname -s)
 
 if [ "$system_type" = "Darwin" ]; then
-  # install homebrew if it's missing
-  if ! command -v brew >/dev/null 2>&1; then
-    echo "Installing homebrew"
-    /bin/bash -c "$(curl -fsSLhttps://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-  fi
+  # homebrew
+    if command_exists brew; then
+        echo_ok "Homebrew already installed. Getting updates..."
+        brew update
+        brew doctor
+    else
+        echo_error 'brew must be installed! (/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)")'
+        exit 1
+    fi
 
-  if [ -f "$HOME/.Brewfile" ]; then
-    echo "Updating homebrew bundle"
-    # Todo probably need to make this global and change it to
-    # brew bundle --global
-    brew bundle install --file ./Brewfile
-  fi
+    if brew bundle check --global; then
+        echo_ok "Brew packages up to date."
+    else
+        echo_warn "Syncing brew packages with brew bundle"
+        brew bundle install --global
+    fi
 fi
 
 nvm install --lts
