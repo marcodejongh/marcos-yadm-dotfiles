@@ -1,9 +1,9 @@
 # Intentionally made this strict so I dont accidentally use the wrong user info
 [includeIf "gitdir:~/Projects/atlassian/"]
-    path = ~/atlassian/.gitconfig
+    path = ~/Projects/atlassian/.gitconfig
 
 [includeIf "gitdir:~/Projects/github/"]
-    path = ~/github/.gitconfig
+    path = ~/Projects/github/.gitconfig
 
 [push]
 	default = current
