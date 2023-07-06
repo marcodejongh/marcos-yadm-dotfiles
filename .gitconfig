@@ -13,3 +13,12 @@
 	editor = vim
 [init]
 	defaultBranch = main
+[trace2]
+	eventTarget = /Users/mdejongh/.gittrace/dump
+	configparams = custom.metacommands
+	eventBrief = true
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge --skip -- %f
+	process = git-lfs filter-process --skip
+	required = true
