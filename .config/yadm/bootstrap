@@ -46,10 +46,7 @@ if [ ! -d "$HOME/.zprezto" ]; then
     git clone --recursive https://github.com/sorin-ionescu/prezto.git "${HOME}/.zprezto"
 fi
 
-if ! command -v fzf >/dev/null 2>&1; then
-    echo installing fzf
-    $HOME/.zprezto/contrib/fzf/external/install --bin
-fi
+echo "We now install fzf with brew, so removed the install inside zprezto"
 
 if [ ! -d "$HOME/.zprezto/contrib/fzf" ]; then
     echo installing fzf-prezto
