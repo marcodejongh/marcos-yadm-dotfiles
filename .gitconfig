@@ -28,6 +28,8 @@
 	pr-number = "!funct() { git merge-commits $1 | head -n1 | sed -n \"s/^.*Merged pull request #\\\\s*\\\\([0-9]*\\\\).*$/\\\\1/p\"; }; funct"
 	web-url = "!funct() { git config remote.origin.url | sed -e\"s/git@/https:\\/\\//\" -e\"s/\\.git$//\" | sed -E \"s/(\\/\\/[^:]*):/\\1\\//\"; }; funct"
 	pr = "!funct() { open \"`git web-url`/pull-requests/`git pr-number $1`\" ;}; funct"
+	conflicted = diff --name-only --diff-filter=U --relative
+	root = rev-parse --show-toplevel
 [interactive]
 	diffFilter = diff-so-fancy --patch
 [color]
