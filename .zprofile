@@ -59,7 +59,7 @@ path=(
   /opt/{homebrew,local}/{,s}bin(N)
   /usr/local/{,s}bin(N)
   $path
-  /Users/marcodejongh/Library/Python/3.9/bin
+  $(python3 -m site --user-base)
 )
 
 #

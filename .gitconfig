@@ -11,6 +11,7 @@
 	pushDefault = origin
 [core]
 	editor = vim
+	pager = diff-so-fancy | less --tabs=4 -RFX
 [init]
 	defaultBranch = main
 [trace2]
@@ -19,6 +20,28 @@
 	eventBrief = true
 [filter "lfs"]
 	clean = git-lfs clean -- %f
-	smudge = git-lfs smudge --skip -- %f
-	process = git-lfs filter-process --skip
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
 	required = true
+[alias]
+	merge-commits = "!funct() { git log --merges --reverse --oneline --ancestry-path $1..origin | grep \"Merged pull request\";  }; funct"
+	pr-number = "!funct() { git merge-commits $1 | head -n1 | sed -n \"s/^.*Merged pull request #\\\\s*\\\\([0-9]*\\\\).*$/\\\\1/p\"; }; funct"
+	web-url = "!funct() { git config remote.origin.url | sed -e\"s/git@/https:\\/\\//\" -e\"s/\\.git$//\" | sed -E \"s/(\\/\\/[^:]*):/\\1\\//\"; }; funct"
+	pr = "!funct() { open \"`git web-url`/pull-requests/`git pr-number $1`\" ;}; funct"
+[interactive]
+	diffFilter = diff-so-fancy --patch
+[color]
+	ui = true
+[color "diff-highlight"]
+	oldNormal = red bold
+	oldHighlight = red bold 52
+	newNormal = green bold
+	newHighlight = green bold 22
+[color "diff"]
+	meta = 11
+	frag = magenta bold
+	func = 146 bold
+	commit = yellow bold
+	old = red bold
+	new = green bold
+	whitespace = red reverse
