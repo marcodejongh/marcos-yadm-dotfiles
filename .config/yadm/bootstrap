@@ -117,3 +117,5 @@ git config --global alias.merge-commits '!funct() { git log --merges --reverse -
 git config --global alias.pr-number '!funct() { git merge-commits $1 | head -n1 | sed -n "s/^.*Merged pull request #\\s*\\([0-9]*\\).*$/\\1/p"; }; funct'
 git config --global alias.web-url '!funct() { git config remote.origin.url | sed -e"s/git@/https:\/\//" -e"s/\.git$//" | sed -E "s/(\/\/[^:]*):/\1\//"; }; funct'
 git config --global alias.pr '!funct() { open "`git web-url`/pull/`git pr-number $1`" ;}; funct'
+
+git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm

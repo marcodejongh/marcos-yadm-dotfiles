@@ -20,5 +20,9 @@
   "[python]": {
     "editor.defaultFormatter": "ms-python.autopep8"
   },
-  "python.analysis.extraPaths": []
+  "python.analysis.extraPaths": [],
+  "[shellscript]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  },
+  "shellformat.useEditorConfig": true
 }

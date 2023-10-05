@@ -38,4 +38,14 @@ alias sa='alias | fzf'
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
+export TMUX_PLUGINS_PATH=~/.tmux/plugins
+
+tmux-window-name() {
+	($TMUX_PLUGINS_PATH/tmux-window-name/scripts/rename_session_windows.py &)
+}
+
+add-zsh-hook chpwd tmux-window-name
+
 export PATH="${HOME}/.pyenv/shims:${PATH}"
+source ~/.afm-git-configrc
+
