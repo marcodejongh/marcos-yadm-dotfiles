@@ -18,6 +18,7 @@
 	eventTarget = /Users/mdejongh/.gittrace/dump
 	configparams = custom.metacommands
 	eventBrief = true
+	maxFiles = 2000
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f

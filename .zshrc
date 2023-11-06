@@ -49,3 +49,34 @@ add-zsh-hook chpwd tmux-window-name
 export PATH="${HOME}/.pyenv/shims:${PATH}"
 source ~/.afm-git-configrc
 
+alias editmydotfiles='code $(yadm ls-tree --name-only --full-tree -r HEAD)'
+export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
+
+movToGif() {
+    TARGET="${2:-$1.gif}"
+    ffmpeg -i "$1" -r 10 -f gif - | gifsicle --optimize=3 --delay=6 > "$TARGET"
+}
+
+alias checkCrowdstrike='sudo fs_usage $(ps -A | grep com.crowdstrike.falcon.Agent | awk "{print $1}" | head -1)'
+alias gfm="git fetch origin master --prune --prune-tags"
+
+#compdef gt
+###-begin-gt-completions-###
+#
+# yargs command completion script
+#
+# Installation: gt completion >> ~/.zshrc
+#    or gt completion >> ~/.zprofile on OSX.
+#
+_gt_yargs_completions()
+{
+  local reply
+  local si=$IFS
+  IFS=$'
+' reply=($(COMP_CWORD="$((CURRENT-1))" COMP_LINE="$BUFFER" COMP_POINT="$CURSOR" gt --get-yargs-completions "${words[@]}"))
+  IFS=$si
+  _describe 'values' reply
+}
+compdef _gt_yargs_completions gt
+###-end-gt-completions-###
+
