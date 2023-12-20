@@ -30,7 +30,6 @@ zstyle ':prezto:*:*' color 'yes'
 # Set the Prezto modules to load (browse modules).
 # The order matters.
 zstyle ':prezto:load' pmodule \
-  'afm-git-plugin' \
   'environment' \
   'terminal' \
   'editor' \
@@ -49,7 +48,8 @@ zstyle ':prezto:load' pmodule \
   'fzf-tab' \
   'syntax-highlighting'  \
   'history-substring-search' \
-  'autosuggestions'
+  'autosuggestions' 
+#  'afm-git-plugin' 
 
 
 #

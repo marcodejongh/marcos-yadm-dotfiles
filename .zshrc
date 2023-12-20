@@ -1,6 +1,6 @@
 GPG_TTY=$(tty)
 export GPG_TTY
-
+source ~/.secretsrc
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
@@ -33,7 +33,18 @@ export NVM_DIR="$HOME/.nvm"
   [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-alias sa='alias | fzf'
+
+#alias sa='alias | fzf'
+unalias sa
+
+sa() {
+    local selected_alias=$(alias | fzf --print-query --preview="echo {}" | tail -n 1)
+    [ -n "$selected_alias" ] && BUFFER="${selected_alias%%=*} "
+    CURSOR=$#BUFFER
+    zle reset-prompt
+}
+zle -N sa
+bindkey '^s' sa
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
@@ -59,6 +70,23 @@ movToGif() {
 
 alias checkCrowdstrike='sudo fs_usage $(ps -A | grep com.crowdstrike.falcon.Agent | awk "{print $1}" | head -1)'
 alias gfm="git fetch origin master --prune --prune-tags"
+alias af="cd ~/Projects/atlassian/atlassian-frontend/master"
+alias cf="cd ~/Projects/atlassian/confluence-frontend/"
+alias jf="cd ~/Projects/atlassian/jira-frontend/"
+alias ap="cd ~/Projects/atlassian/"
+
+alias ell="python3 ~/Projects/github/Elgato-Light-Controller/elgato-light-controller.py -address 192.168.68.51"
+alias elr2="python3 ~/Projects/github/Elgato-Light-Controller/elgato-light-controller.py -address 192.168.68.71"
+alias elr="python3 ~/Projects/github/Elgato-Light-Controller/elgato-light-controller.py -address 192.168.68.72"
+
+alias outheadphone="SwitchAudioSource -s \"Marco’s AirPods Max\""
+alias outspeakers="SwitchAudioSource -s \"iFi (by AMR) HD USB Audio \""
+
+alias inmic="SwitchAudioSource -t input -s \"Wave Link MicrophoneFX\""
+alias inheadphone="SwitchAudioSource -t input -s\"Marco’s AirPods Max\""
+
+alias lightsOn="lightLeft -on && lightRight -on"
+alias lightsOff="lightLeft -off && lightRight -off"
 
 #compdef gt
 ###-begin-gt-completions-###
