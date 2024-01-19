@@ -15,10 +15,11 @@
 [init]
 	defaultBranch = main
 [trace2]
-	eventTarget = /Users/mdejongh/.gittrace/dump
+	eventTarget = af_unix:/Users/mdejongh/.gittrace/trace.sock
 	configparams = custom.metacommands
 	eventBrief = true
 	maxFiles = 2000
+	eventNesting = 1
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f

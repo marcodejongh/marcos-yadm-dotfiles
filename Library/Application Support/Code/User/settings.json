@@ -14,7 +14,6 @@
   },
   "terminal.external.osxExec": "alacritty.app",
   "terminal.integrated.fontFamily": "MesloLGS NF",
-  "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
   "prettier.printWidth": 120,
   "[python]": {
@@ -24,5 +23,21 @@
   "[shellscript]": {
     "editor.defaultFormatter": "foxundermoon.shell-format"
   },
-  "shellformat.useEditorConfig": true
+  "shellformat.useEditorConfig": true,
+  "python.defaultInterpreterPath": "/Users/mdejongh/Projects/atlassian/uip-notebooks/myenv",
+  "editor.formatOnSaveMode": "modifications",
+  "shellformat.effectLanguages": [
+    
+    "shellscript",
+    "dockerfile",
+    "dotenv",
+    "hosts",
+    "jvmoptions",
+    "ignore",
+    "gitignore",
+    "properties",
+    "spring-boot-properties",
+    "azcli",
+    "bats"
+  ]
 }
