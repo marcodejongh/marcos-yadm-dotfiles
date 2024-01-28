@@ -108,3 +108,7 @@ _gt_yargs_completions()
 compdef _gt_yargs_completions gt
 ###-end-gt-completions-###
 
+# https://gist.github.com/dergachev/8259104
+alias sshpbcopy="nc -q0 localhost 5556"
+alias sshdaemon="while (true); do nc -l 5556 | pbcopy; done"
+
