@@ -14,12 +14,6 @@
 	pager = diff-so-fancy | less --tabs=4 -RFX
 [init]
 	defaultBranch = main
-[trace2]
-	eventTarget = af_unix:/Users/mdejongh/.gittrace/trace.sock
-	configparams = custom.metacommands
-	eventBrief = true
-	maxFiles = 2000
-	eventNesting = 1
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
@@ -32,6 +26,11 @@
 	pr = "!funct() { open \"`git web-url`/pull-requests/`git pr-number $1`\" ;}; funct"
 	conflicted = diff --name-only --diff-filter=U --relative
 	root = rev-parse --show-toplevel
+	find-hash = "!f() { git log --grep=\"$1\" -n 1 --format=%H; }; f"
+	files = "!git diff --name-only $(git merge-base HEAD \"$REVIEW_BASE\")"
+	stat = !git diff --stat $(git merge-base HEAD \"$REVIEW_BASE\")
+	depgraph = !git madge image --webpack-config webpack.config.js --basedir . --style solarized-dark src
+	heatmap = "!f() { git diff --name-only $(git merge-base HEAD \"$REVIEW_BASE\")...HEAD | grep -v -E \"\\\\.(json|lock)$\" | sort | uniq -c | sort -nr | head -n 25; }; f"
 [interactive]
 	diffFilter = diff-so-fancy --patch
 [color]
@@ -54,3 +53,41 @@
 	pruneTags = true
 [gui]
 	pruneDuringFetch = true
+[user]
+	email = mdejongh@atlassian.com
+	name = Marco de Jongh
+[trace2]
+	eventTarget = af_unix:/Users/mdejongh/.gittrace/trace.sock
+	eventBrief = true
+	eventNesting = 1
+	configparams = custom.metacommands
+[credential "http://localhost:7990"]
+	provider = generic
+[http]
+	useragent = bb-cli/0.4.0
+[maintenance]
+	repo = /Users/mdejongh/Projects/atlassian/afm/master
+	repo = /Users/mdejongh/Projects/atlassian/afm/checkouttwo
+[credential]
+	helper = 
+	helper = /usr/local/share/gcm-core/git-credential-manager
+[credential "https://dev.azure.com"]
+	useHttpPath = true
+[commit]
+	verbose = true
+[rerere]
+	enabled = true
+	autoupdate = true
+[rebase]
+	autoSquash = true
+	autoStash = true
+	updateRefs = true
+[merge]
+	conflictstyle = zdiff3
+[pull]
+	rebase = true
+[diff]
+	colorMoved = plain
+	mnemonicPrefix = true
+	renames = true
+	algorithm = histogram

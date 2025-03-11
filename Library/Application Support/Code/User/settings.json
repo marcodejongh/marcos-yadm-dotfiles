@@ -12,6 +12,9 @@
   "[jsonc]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
+  "[swift]": {
+    "editor.defaultFormatter": "vknabel.vscode-apple-swift-format"
+  },
   "terminal.external.osxExec": "alacritty.app",
   "terminal.integrated.fontFamily": "MesloLGS NF",
   "editor.formatOnPaste": true,
@@ -27,7 +30,6 @@
   "python.defaultInterpreterPath": "/Users/mdejongh/Projects/atlassian/uip-notebooks/myenv",
   "editor.formatOnSaveMode": "modifications",
   "shellformat.effectLanguages": [
-    
     "shellscript",
     "dockerfile",
     "dotenv",
@@ -39,5 +41,21 @@
     "spring-boot-properties",
     "azcli",
     "bats"
-  ]
+  ],
+  "eslint.format.enable": true,
+  "github.copilot.editor.enableAutoCompletions": true,
+  "editor.tabSize": 2,
+  "lldb.library": "/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Versions/A/LLDB",
+  "lldb.launch.expressions": "native",
+  "apple-swift-format.path": [
+    "swift-format"
+  ],
+  "files.autoSave": "afterDelay",
+  "editor.accessibilitySupport": "off",
+  "prettier.enable": false,
+  "files.exclude": {
+    "**/.sl": true
+  },
+  "typescript.format.enable": false,
+  "typescript.tsserver.web.projectWideIntellisense.enabled": false
 }

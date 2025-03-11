@@ -35,16 +35,16 @@ export NVM_DIR="$HOME/.nvm"
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 #alias sa='alias | fzf'
-unalias sa
+#unalias sa
 
-sa() {
-    local selected_alias=$(alias | fzf --print-query --preview="echo {}" | tail -n 1)
-    [ -n "$selected_alias" ] && BUFFER="${selected_alias%%=*} "
-    CURSOR=$#BUFFER
-    zle reset-prompt
-}
-zle -N sa
-bindkey '^s' sa
+# sa() {
+#     local selected_alias=$(alias | fzf --print-query --preview="echo {}" | tail -n 1)
+#     [ -n "$selected_alias" ] && BUFFER="${selected_alias%%=*} "
+#     CURSOR=$#BUFFER
+#     zle reset-prompt
+# }
+# zle -N sa
+# bindkey '^s' sa
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
@@ -111,4 +111,20 @@ compdef _gt_yargs_completions gt
 # https://gist.github.com/dergachev/8259104
 alias sshpbcopy="nc -q0 localhost 5556"
 alias sshdaemon="while (true); do nc -l 5556 | pbcopy; done"
+export PATH="$HOME/.cargo/bin:$PATH"
 
+# Render tab characters 2 spaces wide
+#tabs -2
+
+export PATH="/Users/mdejongh/.local/bin:$PATH"
+export PATH="$HOME/.jenv/bin:$PATH"
+eval "$(jenv init -)"
+
+
+
+export PATH="/Users/mdejongh/Projects/atlassian/afm/master/afm-tools/path:$PATH"
+
+export REVIEW_BASE="origin/master"
+export PATH="/opt/atlassian/bin:$PATH"
+
+export PATH="/Users/mdejongh/.orbit/bin:$PATH"
