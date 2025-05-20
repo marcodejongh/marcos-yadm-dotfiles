@@ -1,4 +1,3 @@
-tap "1password/tap"
 tap "danielgatis/imgcat"
 tap "homebrew/bundle"
 tap "homebrew/cask-versions"

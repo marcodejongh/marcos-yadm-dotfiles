@@ -128,3 +128,10 @@ export REVIEW_BASE="origin/master"
 export PATH="/opt/atlassian/bin:$PATH"
 
 export PATH="/Users/mdejongh/.orbit/bin:$PATH"
+
+# Load tmux virtual environment for tmux-window-name plugin
+if [[ -f ~/.tmux_venv/bin/activate ]]; then
+  source ~/.tmux_venv/bin/activate
+fi
+export PATH="/opt/atlassian/bin:$PATH"
+

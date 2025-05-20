@@ -16,7 +16,7 @@
 zstyle ':prezto:*:*' color 'yes'
 
 # Add additional directories to load prezto modules from
-# zstyle ':prezto:load' pmodule-dirs $HOME/.zprezto-contrib
+# zstyle ':prezto:load' pmodule-dirs $HOME/.zprezto/contrib
 
 # Allow module overrides when pmodule-dirs causes module name collisions
 # zstyle ':prezto:load' pmodule-allow-overrides 'yes'
@@ -31,6 +31,7 @@ zstyle ':prezto:*:*' color 'yes'
 # The order matters.
 zstyle ':prezto:load' pmodule \
   'environment' \
+  'git' \
   'terminal' \
   'editor' \
   'history' \
@@ -38,18 +39,11 @@ zstyle ':prezto:load' pmodule \
   'spectrum' \
   'utility' \
   'completion' \
-  'prompt' \
-  'git' \
-  'big-git' \
-  'tmux' \
-  'homebrew' \
-  'node' \
-  'ssh' \
   'fzf-tab' \
-  'syntax-highlighting'  \
+  'prompt' \
+  'syntax-highlighting' \
   'history-substring-search' \
-  'autosuggestions' 
-#  'afm-git-plugin' 
+  'autosuggestions'
 
 
 #

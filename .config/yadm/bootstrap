@@ -23,7 +23,7 @@ if [ "$system_type" = "Darwin" ]; then
     if command -v brew >/dev/null 2>&1; then
         echo "Homebrew already installed. Getting updates..."
         brew update
-        brew doctor
+        brew doctor || true
     else
         echo 'brew must be installed! (/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)")'
         exit 1
@@ -82,15 +82,6 @@ if [ "$system_type" = "Darwin" ]; then
         mkdir -p $HOME/tmp/yadm-bootstrap;
         cd $HOME/tmp/yadm-bootstrap;
         curl -L -O https://downloads.1password.com/mac/1Password.zip
-        unzip 1Password.zip
-        open -W 1Password\ Installer.app
-    fi
-
-    if [ ! -z $(ls /Applications/ | grep -q -i 'Visual Studio Code')]; then
-        echo "Installing VSCode"
-        mkdir -p $HOME/tmp/yadm-bootstrap;
-        curl -L -O https://downloads.1password.com/mac/1Password.zip
-        curl -L -o $HOME/tmp/yadm-bootstrap/VSCode-darwin-universal.zip 'https://code.visualstudio.com/sha/download?build=stable&os=darwin-universal'
         unzip 1Password.zip
         open -W 1Password\ Installer.app
     fi
