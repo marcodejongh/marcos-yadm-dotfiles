@@ -77,7 +77,7 @@
 	repo = /Users/mdejongh/Projects/atlassian/afm/checkouttwo
 [credential]
 	helper = 
-	helper = /usr/local/share/gcm-core/git-credential-manager
+	helper = "\\!f() { op item get 'GitHub Personal Access Token' --fields password 2>/dev/null || echo; }; f"
 [credential "https://dev.azure.com"]
 	useHttpPath = true
 [commit]
