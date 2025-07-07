@@ -35,23 +35,9 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   compinit
 fi
 
-# Platform-aware Node.js manager setup
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  # macOS - use nvm if available, otherwise fnm
-  if command -v nvm &>/dev/null; then
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-  elif command -v fnm &>/dev/null; then
-    eval "$(fnm env --use-on-cd --shell zsh)"
-  fi
-else
-  # Linux - use fnm
-  if command -v fnm &>/dev/null; then
-    export FNM_DIR="$HOME/.fnm"
-    export PATH="$HOME/.fnm:$PATH"
-    eval "$(fnm env --use-on-cd --shell zsh)"
-  fi
+# FNM (Fast Node Manager) setup - cross-platform
+if command -v fnm &>/dev/null; then
+  eval "$(fnm env --use-on-cd --shell zsh)"
 fi
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
@@ -183,11 +169,6 @@ export PATH="/opt/atlassian/bin:$PATH"
 fpath=(~/.zsh $fpath)
 autoload -Uz compinit && compinit
 
-# Additional FNM configuration (if not already handled above)
-if [[ "$OSTYPE" == "darwin"* ]] && [ -d "$HOME/Library/Application Support/fnm" ]; then
-  export PATH="$HOME/Library/Application Support/fnm:$PATH"
-  eval "$(fnm env --use-on-cd --shell zsh)"
-fi
 
 #compdef fnm
 
