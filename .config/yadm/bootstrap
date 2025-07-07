@@ -317,7 +317,7 @@ if [ ! -d "$HOME/.zprezto" ]; then
     git clone --recursive https://github.com/sorin-ionescu/prezto.git "${HOME}/.zprezto"
 fi
 
-echo "We now install fzf with brew, so removed the install inside zprezto"
+echo "FZF is installed via system package managers (brew on macOS, dnf/apt on Linux)"
 
 if [ ! -d "$HOME/.zprezto/contrib/fzf" ]; then
     echo installing fzf-prezto
