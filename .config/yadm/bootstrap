@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# Store the original directory for accessing config files
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 # Because Git submodule commands cannot operate without a work tree, they must
 # be run from within $HOME (assuming this is the root of your dotfiles)
 cd "$HOME"
@@ -58,11 +62,11 @@ if [ "$os_name" = "macos" ]; then
     echo "Updating to latest apple software"
     sudo softwareupdate -i -a
 elif [ "$os_name" = "fedora" ]; then
-    echo "Updating system packages"
-    sudo dnf update -y
+    echo "Updating system packages (you may be prompted for password)"
+    sudo dnf update -y || echo "Warning: System update failed, continuing..."
 elif [ "$os_name" = "ubuntu" ]; then
-    echo "Updating system packages"
-    sudo apt update && sudo apt upgrade -y
+    echo "Updating system packages (you may be prompted for password)"
+    sudo apt update && sudo apt upgrade -y || echo "Warning: System update failed, continuing..."
 fi
 
 # Package management
@@ -84,18 +88,34 @@ if [ "$os_name" = "macos" ]; then
         brew bundle install --global
     fi
 elif [ "$os_name" = "fedora" ]; then
-    echo "Installing packages from fedora.txt"
-    if [ -f "$HOME/.config/yadm/packages/fedora.txt" ]; then
+    echo "Installing packages from fedora.txt (you may be prompted for password)"
+    fedora_packages="$HOME/.config/yadm/packages/fedora.txt"
+    # Also check repo directory for initial setup
+    if [ ! -f "$fedora_packages" ] && [ -f "$REPO_ROOT/.config/yadm/packages/fedora.txt" ]; then
+        fedora_packages="$REPO_ROOT/.config/yadm/packages/fedora.txt"
+    fi
+    
+    if [ -f "$fedora_packages" ]; then
         # Remove comments and empty lines, then install
-        grep -v '^#' "$HOME/.config/yadm/packages/fedora.txt" | grep -v '^$' | xargs sudo dnf install -y
+        packages=$(grep -v '^#' "$fedora_packages" | grep -v '^$' | tr '\n' ' ')
+        echo "Installing packages: $packages"
+        sudo dnf install -y $packages || echo "Warning: Some packages failed to install"
     else
         echo "Warning: fedora.txt not found, skipping package installation"
     fi
 elif [ "$os_name" = "ubuntu" ]; then
-    echo "Installing packages from ubuntu.txt"
-    if [ -f "$HOME/.config/yadm/packages/ubuntu.txt" ]; then
+    echo "Installing packages from ubuntu.txt (you may be prompted for password)"
+    ubuntu_packages="$HOME/.config/yadm/packages/ubuntu.txt"
+    # Also check repo directory for initial setup
+    if [ ! -f "$ubuntu_packages" ] && [ -f "$REPO_ROOT/.config/yadm/packages/ubuntu.txt" ]; then
+        ubuntu_packages="$REPO_ROOT/.config/yadm/packages/ubuntu.txt"
+    fi
+    
+    if [ -f "$ubuntu_packages" ]; then
         # Remove comments and empty lines, then install
-        grep -v '^#' "$HOME/.config/yadm/packages/ubuntu.txt" | grep -v '^$' | xargs sudo apt install -y
+        packages=$(grep -v '^#' "$ubuntu_packages" | grep -v '^$' | tr '\n' ' ')
+        echo "Installing packages: $packages"
+        sudo apt install -y $packages || echo "Warning: Some packages failed to install"
     else
         echo "Warning: ubuntu.txt not found, skipping package installation"
     fi
@@ -114,10 +134,12 @@ else
     if ! command -v fnm >/dev/null 2>&1; then
         echo "Installing fnm (Fast Node Manager)"
         curl -fsSL https://fnm.vercel.app/install | bash
-        export PATH="$HOME/.fnm:$PATH"
+        # Source the fnm environment immediately after installation
+        export PATH="$HOME/.local/share/fnm:$PATH"
         eval "$(fnm env --use-on-cd)"
     fi
     
+    # Re-check after sourcing the environment
     if command -v fnm >/dev/null 2>&1; then
         fnm install --lts
         fnm use lts-latest
