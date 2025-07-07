@@ -111,6 +111,16 @@ elif [ "$os_name" = "fedora" ]; then
         echo "Installing Brave browser"
         curl -fsS https://dl.brave.com/install.sh | sh || echo "Warning: Failed to install Brave browser"
         
+        # Install Rust via rustup
+        if ! command -v rustc >/dev/null 2>&1; then
+            echo "Installing Rust via rustup"
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y || echo "Warning: Failed to install Rust"
+            # Add cargo to PATH for immediate use
+            export PATH="$HOME/.cargo/bin:$PATH"
+        else
+            echo "Rust already installed"
+        fi
+        
         # Change default shell to zsh
         if command -v zsh >/dev/null 2>&1; then
             current_shell=$(getent passwd "$USER" | cut -d: -f7)
@@ -186,6 +196,16 @@ elif [ "$os_name" = "ubuntu" ]; then
         # Install Brave browser
         echo "Installing Brave browser"
         curl -fsS https://dl.brave.com/install.sh | sh || echo "Warning: Failed to install Brave browser"
+        
+        # Install Rust via rustup
+        if ! command -v rustc >/dev/null 2>&1; then
+            echo "Installing Rust via rustup"
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y || echo "Warning: Failed to install Rust"
+            # Add cargo to PATH for immediate use
+            export PATH="$HOME/.cargo/bin:$PATH"
+        else
+            echo "Rust already installed"
+        fi
         
         # Change default shell to zsh
         if command -v zsh >/dev/null 2>&1; then
