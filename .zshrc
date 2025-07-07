@@ -29,7 +29,8 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     compinit
   fi
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-  # Linux completion setup
+  # Linux completion setup - add system completion directories
+  FPATH="/usr/share/zsh/site-functions:${FPATH}"
   autoload -Uz compinit
   compinit
 fi
