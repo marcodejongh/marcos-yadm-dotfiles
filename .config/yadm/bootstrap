@@ -125,11 +125,11 @@ elif [ "$os_name" = "fedora" ]; then
         if [ -n "$DISPLAY" ] || command -v X >/dev/null 2>&1 || [ -d "/tmp/.X11-unix" ]; then
             echo "X server detected, installing Sunshine"
             # Add Sunshine repository and install
-            if ! rpm -qa | grep -q sunshine; then
-                echo "Adding Sunshine repository"
-                sudo curl -fsSL https://github.com/LizardByte/Sunshine/releases/latest/download/sunshine-fedora-40-amd64.rpm -o /tmp/sunshine.rpm || echo "Warning: Failed to download Sunshine"
-                sudo dnf install -y /tmp/sunshine.rpm || echo "Warning: Failed to install Sunshine"
-                rm -f /tmp/sunshine.rpm
+            if ! rpm -qa | grep -q -i sunshine && ! dnf list installed | grep -q -i sunshine; then
+                echo "Installing Sunshine via COPR repository"
+                # Enable COPR repository for Sunshine (using stable)
+                sudo dnf copr enable -y lizardbyte/stable || echo "Warning: Failed to enable COPR repository"
+                sudo dnf install -y Sunshine || echo "Warning: Failed to install Sunshine from COPR"
                 
                 # Set up autostart
                 echo "Setting up Sunshine autostart"
