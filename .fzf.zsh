@@ -12,10 +12,13 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 else
   # Linux - use system fzf
   if command -v fzf >/dev/null 2>&1; then
-    # Load completion functions
-    autoload -U compinit && compinit
-    # Source completion and key bindings
-    [[ -f /usr/share/zsh/site-functions/_fzf ]] && source "/usr/share/zsh/site-functions/_fzf" 2>/dev/null
+    # Only use autoload in zsh
+    if [[ -n "$ZSH_VERSION" ]]; then
+      # Load completion functions
+      autoload -U compinit && compinit
+      # Source completion and key bindings
+      [[ -f /usr/share/zsh/site-functions/_fzf ]] && source "/usr/share/zsh/site-functions/_fzf" 2>/dev/null
+    fi
     source "/usr/share/fzf/shell/key-bindings.zsh" 2>/dev/null
   fi
 fi

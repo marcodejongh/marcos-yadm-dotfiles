@@ -252,9 +252,8 @@ else
     if ! command -v fnm >/dev/null 2>&1; then
         echo "Installing fnm (Fast Node Manager)"
         curl -fsSL https://fnm.vercel.app/install | bash
-        # Source the fnm environment immediately after installation
+        # Add fnm to PATH for immediate use
         export PATH="$HOME/.local/share/fnm:$PATH"
-        eval "$(fnm env --use-on-cd)"
     fi
     
     # Re-check after sourcing the environment
