@@ -14,8 +14,8 @@ python3
 python3-pip
 nodejs
 npm
-java-11-openjdk
-java-11-openjdk-devel
+java-latest-openjdk
+java-latest-openjdk-devel
 
 # CLI utilities
 ripgrep
@@ -24,8 +24,8 @@ fd-find
 fzf
 tree
 htop
-neofetch
-delta
+fastfetch
+git-delta
 
 # Terminal emulators
 alacritty
@@ -34,11 +34,6 @@ alacritty
 google-noto-mono-fonts
 google-noto-sans-fonts
 liberation-fonts
-powerline-fonts
 
 # Optional GUI applications
-code
-firefox
-thunderbird
-gimp
 vlc

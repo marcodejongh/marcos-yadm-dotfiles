@@ -100,6 +100,12 @@ elif [ "$os_name" = "fedora" ]; then
         packages=$(grep -v '^#' "$fedora_packages" | grep -v '^$' | tr '\n' ' ')
         echo "Installing packages: $packages"
         sudo dnf install -y $packages || echo "Warning: Some packages failed to install"
+        
+        # Install VS Code
+        echo "Installing VS Code"
+        sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc || echo "Warning: Failed to import VS Code key"
+        sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo' || echo "Warning: Failed to add VS Code repository"
+        sudo dnf install -y code || echo "Warning: Failed to install VS Code"
     else
         echo "Warning: fedora.txt not found, skipping package installation"
     fi
