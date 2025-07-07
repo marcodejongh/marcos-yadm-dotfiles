@@ -120,6 +120,48 @@ elif [ "$os_name" = "fedora" ]; then
         else
             echo "Warning: zsh not found, cannot change default shell"
         fi
+        
+        # Install Sunshine if X server is available
+        if [ -n "$DISPLAY" ] || command -v X >/dev/null 2>&1 || [ -d "/tmp/.X11-unix" ]; then
+            echo "X server detected, installing Sunshine"
+            # Add Sunshine repository and install
+            if ! rpm -qa | grep -q sunshine; then
+                echo "Adding Sunshine repository"
+                sudo curl -fsSL https://github.com/LizardByte/Sunshine/releases/latest/download/sunshine-fedora-40-amd64.rpm -o /tmp/sunshine.rpm || echo "Warning: Failed to download Sunshine"
+                sudo dnf install -y /tmp/sunshine.rpm || echo "Warning: Failed to install Sunshine"
+                rm -f /tmp/sunshine.rpm
+                
+                # Set up autostart
+                echo "Setting up Sunshine autostart"
+                mkdir -p "$HOME/.config/autostart"
+                cat > "$HOME/.config/autostart/sunshine.desktop" << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=Sunshine
+Comment=Self-hosted game stream host for Moonlight
+Exec=sunshine
+Icon=sunshine
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+Hidden=false
+EOF
+                
+                # Add Mutter cursor fix for better streaming experience
+                echo "Configuring Mutter for optimal streaming"
+                if ! grep -q "MUTTER_DEBUG_DISABLE_HW_CURSORS=1" /etc/environment 2>/dev/null; then
+                    echo "MUTTER_DEBUG_DISABLE_HW_CURSORS=1" | sudo tee -a /etc/environment >/dev/null || echo "Warning: Failed to add Mutter cursor fix"
+                    echo "Added MUTTER_DEBUG_DISABLE_HW_CURSORS=1 to /etc/environment"
+                else
+                    echo "Mutter cursor fix already configured"
+                fi
+                
+                echo "Sunshine installed and configured to start on login"
+            else
+                echo "Sunshine already installed"
+            fi
+        else
+            echo "No X server detected, skipping Sunshine installation"
+        fi
     else
         echo "Warning: fedora.txt not found, skipping package installation"
     fi
@@ -149,6 +191,48 @@ elif [ "$os_name" = "ubuntu" ]; then
             fi
         else
             echo "Warning: zsh not found, cannot change default shell"
+        fi
+        
+        # Install Sunshine if X server is available
+        if [ -n "$DISPLAY" ] || command -v X >/dev/null 2>&1 || [ -d "/tmp/.X11-unix" ]; then
+            echo "X server detected, installing Sunshine"
+            # Install Sunshine for Ubuntu
+            if ! dpkg -l | grep -q sunshine; then
+                echo "Installing Sunshine for Ubuntu"
+                sudo curl -fsSL https://github.com/LizardByte/Sunshine/releases/latest/download/sunshine-ubuntu-22.04-amd64.deb -o /tmp/sunshine.deb || echo "Warning: Failed to download Sunshine"
+                sudo dpkg -i /tmp/sunshine.deb || sudo apt-get install -f -y
+                rm -f /tmp/sunshine.deb
+                
+                # Set up autostart
+                echo "Setting up Sunshine autostart"
+                mkdir -p "$HOME/.config/autostart"
+                cat > "$HOME/.config/autostart/sunshine.desktop" << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=Sunshine
+Comment=Self-hosted game stream host for Moonlight
+Exec=sunshine
+Icon=sunshine
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+Hidden=false
+EOF
+                
+                # Add Mutter cursor fix for better streaming experience
+                echo "Configuring Mutter for optimal streaming"
+                if ! grep -q "MUTTER_DEBUG_DISABLE_HW_CURSORS=1" /etc/environment 2>/dev/null; then
+                    echo "MUTTER_DEBUG_DISABLE_HW_CURSORS=1" | sudo tee -a /etc/environment >/dev/null || echo "Warning: Failed to add Mutter cursor fix"
+                    echo "Added MUTTER_DEBUG_DISABLE_HW_CURSORS=1 to /etc/environment"
+                else
+                    echo "Mutter cursor fix already configured"
+                fi
+                
+                echo "Sunshine installed and configured to start on login"
+            else
+                echo "Sunshine already installed"
+            fi
+        else
+            echo "No X server detected, skipping Sunshine installation"
         fi
     else
         echo "Warning: ubuntu.txt not found, skipping package installation"
