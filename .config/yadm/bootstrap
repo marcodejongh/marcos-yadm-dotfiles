@@ -148,7 +148,12 @@ else
     fi
 fi
 
-yadm clone https://github.com/marcodejongh/marcos-yadm-dotfiles.git
+if ! yadm status >/dev/null 2>&1; then
+    echo "Cloning yadm repository"
+    yadm clone https://github.com/marcodejongh/marcos-yadm-dotfiles.git
+else
+    echo "Yadm repository already exists, skipping clone"
+fi
 
 if [ ! -d "$HOME/.zprezto" ]; then
     echo "Install zpresto"
