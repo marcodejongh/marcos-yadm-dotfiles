@@ -6,12 +6,14 @@
     path = ~/Projects/github/.gitconfig
 
 [push]
-	default = current
+	default = simple
+	autoSetupRemote = true
 [remote]
 	pushDefault = origin
 [core]
 	editor = vim
-	pager = diff-so-fancy | less --tabs=4 -RFX
+	pager = delta
+		
 [init]
 	defaultBranch = main
 [filter "lfs"]
@@ -31,8 +33,13 @@
 	stat = !git diff --stat $(git merge-base HEAD \"$REVIEW_BASE\")
 	depgraph = !git madge image --webpack-config webpack.config.js --basedir . --style solarized-dark src
 	heatmap = "!f() { git diff --name-only $(git merge-base HEAD \"$REVIEW_BASE\")...HEAD | grep -v -E \"\\\\.(json|lock)$\" | sort | uniq -c | sort -nr | head -n 25; }; f"
+	wt = "!f() { cd $(git worktree list | fzf | awk \"{print \\$1}\") && exec $SHELL; }; f"
+	gWs = "!f() { cd $(git worktree list | fzf | awk \"{print \\$1}\") && exec $SHELL; }; f"
 [interactive]
-	diffFilter = diff-so-fancy --patch
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+	dark = true
 [color]
 	ui = true
 [color "diff-highlight"]
@@ -79,7 +86,7 @@
 	enabled = true
 	autoupdate = true
 [rebase]
-	autoSquash = true
+	autosquash = true
 	autoStash = true
 	updateRefs = true
 [merge]
@@ -91,3 +98,5 @@
 	mnemonicPrefix = true
 	renames = true
 	algorithm = histogram
+[help]
+	autocorrect = prompt

@@ -1,6 +1,6 @@
 GPG_TTY=$(tty)
 export GPG_TTY
-source ~/.secretsrc
+#source ~/.secretsrc
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
@@ -28,13 +28,20 @@ then
   compinit
 fi
 
-export NVM_DIR="$HOME/.nvm"
-  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
-  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+export PATH="/Users/mdejongh/.local/state/fnm_multishells/91339_1751348695248/bin":$PATH
+export FNM_MULTISHELL_PATH="/Users/mdejongh/.local/state/fnm_multishells/91339_1751348695248"
+export FNM_VERSION_FILE_STRATEGY="local"
+export FNM_DIR="/Users/mdejongh/.local/share/fnm"
+export FNM_LOGLEVEL="info"
+export FNM_NODE_DIST_MIRROR="https://nodejs.org/dist"
+export FNM_COREPACK_ENABLED="false"
+export FNM_RESOLVE_ENGINES="true"
+export FNM_ARCH="arm64"
+rehash
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
-#alias sa='alias | fzf'
+alias sa='alias | fzf'
 #unalias sa
 
 # sa() {
@@ -134,4 +141,23 @@ if [[ -f ~/.tmux_venv/bin/activate ]]; then
   source ~/.tmux_venv/bin/activate
 fi
 export PATH="/opt/atlassian/bin:$PATH"
+fpath=(~/.zsh $fpath)
+autoload -Uz compinit && compinit
 
+# fnm
+FNM_PATH="/Users/mdejongh/Library/Application Support/fnm"
+if [ -d "$FNM_PATH" ]; then
+  export PATH="/Users/mdejongh/Library/Application Support/fnm:$PATH"
+  eval "`fnm env`"
+fi
+
+eval "$(fnm env --use-on-cd --shell zsh)"
+
+#compdef fnm
+
+# Added by spr for shell completions
+fpath=(~/.local/share/zsh/completions $fpath)
+autoload -Uz compinit && compinit
+
+fpath=(/Users/mdejongh/.local/share/zsh/completions $fpath)
+gWs() { local wt=$(git worktree list | fzf | awk "{print \$1}"); [[ -n "$wt" ]] && cd "$wt"; }
