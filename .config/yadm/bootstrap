@@ -106,6 +106,20 @@ elif [ "$os_name" = "fedora" ]; then
         sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc || echo "Warning: Failed to import VS Code key"
         sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo' || echo "Warning: Failed to add VS Code repository"
         sudo dnf install -y code || echo "Warning: Failed to install VS Code"
+        
+        # Change default shell to zsh
+        if command -v zsh >/dev/null 2>&1; then
+            current_shell=$(getent passwd "$USER" | cut -d: -f7)
+            zsh_path=$(which zsh)
+            if [ "$current_shell" != "$zsh_path" ]; then
+                echo "Changing default shell to zsh"
+                chsh -s "$zsh_path" || echo "Warning: Failed to change shell to zsh"
+            else
+                echo "Default shell is already zsh"
+            fi
+        else
+            echo "Warning: zsh not found, cannot change default shell"
+        fi
     else
         echo "Warning: fedora.txt not found, skipping package installation"
     fi
@@ -122,6 +136,20 @@ elif [ "$os_name" = "ubuntu" ]; then
         packages=$(grep -v '^#' "$ubuntu_packages" | grep -v '^$' | tr '\n' ' ')
         echo "Installing packages: $packages"
         sudo apt install -y $packages || echo "Warning: Some packages failed to install"
+        
+        # Change default shell to zsh
+        if command -v zsh >/dev/null 2>&1; then
+            current_shell=$(getent passwd "$USER" | cut -d: -f7)
+            zsh_path=$(which zsh)
+            if [ "$current_shell" != "$zsh_path" ]; then
+                echo "Changing default shell to zsh"
+                chsh -s "$zsh_path" || echo "Warning: Failed to change shell to zsh"
+            else
+                echo "Default shell is already zsh"
+            fi
+        else
+            echo "Warning: zsh not found, cannot change default shell"
+        fi
     else
         echo "Warning: ubuntu.txt not found, skipping package installation"
     fi
@@ -250,4 +278,9 @@ else
     git config --global alias.pr '!funct() { xdg-open "`git web-url`/pull/`git pr-number $1`" ;}; funct'
 fi
 
-git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
+    echo "Installing tmux plugin manager"
+    git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+else
+    echo "Tmux plugin manager already installed"
+fi
