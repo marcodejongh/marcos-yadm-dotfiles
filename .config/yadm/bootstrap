@@ -255,14 +255,6 @@ else
         # Add fnm to PATH for immediate use
         export PATH="$HOME/.local/share/fnm:$PATH"
     fi
-    
-    # Re-check after sourcing the environment
-    if command -v fnm >/dev/null 2>&1; then
-        fnm install --lts
-        fnm use lts-latest
-    else
-        echo "Warning: fnm installation failed, using system Node.js"
-    fi
 fi
 
 if ! yadm status >/dev/null 2>&1; then
