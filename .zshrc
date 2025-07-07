@@ -74,7 +74,10 @@ alias sa='alias | fzf'
 export TMUX_PLUGINS_PATH=~/.tmux/plugins
 
 tmux-window-name() {
-	($TMUX_PLUGINS_PATH/tmux-window-name/scripts/rename_session_windows.py &)
+	# Only run if we're in a tmux session and the plugin exists
+	if [[ -n "$TMUX" ]] && [ -f "$TMUX_PLUGINS_PATH/tmux-window-name/scripts/rename_session_windows.py" ]; then
+		($TMUX_PLUGINS_PATH/tmux-window-name/scripts/rename_session_windows.py &)
+	fi
 }
 
 add-zsh-hook chpwd tmux-window-name
@@ -172,7 +175,7 @@ export REVIEW_BASE="origin/master"
 export PATH="/opt/atlassian/bin:$PATH"
 export PATH="$HOME/.orbit/bin:$PATH"
 
-# Load tmux virtual environment for tmux-window-name plugin
+# Load tmux virtual environment for tmux-window-name plugin (if it exists)
 if [[ -f ~/.tmux_venv/bin/activate ]]; then
   source ~/.tmux_venv/bin/activate
 fi
