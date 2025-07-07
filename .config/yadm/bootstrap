@@ -7,19 +7,67 @@ set -e
 
 echo "Install starting..."
 
-# requires xcode and tools!
-xcode-select -p || {
-    echo "XCode must be installed! (run xcode-select --install)"
-    exit 1
-}
-
-echo "Updating to latest apple software"
-sudo softwareupdate -i -a
-
+# Platform detection
 system_type=$(uname -s)
+os_name=""
+package_manager=""
 
-if [ "$system_type" = "Darwin" ]; then
-  # homebrew
+case "$system_type" in
+    Darwin)
+        os_name="macos"
+        package_manager="brew"
+        ;;
+    Linux)
+        if [ -f /etc/os-release ]; then
+            . /etc/os-release
+            case "$ID" in
+                fedora|rhel|centos)
+                    os_name="fedora"
+                    package_manager="dnf"
+                    ;;
+                ubuntu|debian)
+                    os_name="ubuntu"
+                    package_manager="apt"
+                    ;;
+                *)
+                    echo "Unsupported Linux distribution: $ID"
+                    exit 1
+                    ;;
+            esac
+        else
+            echo "Cannot determine Linux distribution"
+            exit 1
+        fi
+        ;;
+    *)
+        echo "Unsupported operating system: $system_type"
+        exit 1
+        ;;
+esac
+
+echo "Detected platform: $os_name"
+
+# Platform-specific initial setup
+if [ "$os_name" = "macos" ]; then
+    # requires xcode and tools!
+    xcode-select -p || {
+        echo "XCode must be installed! (run xcode-select --install)"
+        exit 1
+    }
+    
+    echo "Updating to latest apple software"
+    sudo softwareupdate -i -a
+elif [ "$os_name" = "fedora" ]; then
+    echo "Updating system packages"
+    sudo dnf update -y
+elif [ "$os_name" = "ubuntu" ]; then
+    echo "Updating system packages"
+    sudo apt update && sudo apt upgrade -y
+fi
+
+# Package management
+if [ "$os_name" = "macos" ]; then
+    # homebrew
     if command -v brew >/dev/null 2>&1; then
         echo "Homebrew already installed. Getting updates..."
         brew update
@@ -35,9 +83,48 @@ if [ "$system_type" = "Darwin" ]; then
         echo "Syncing brew packages with brew bundle"
         brew bundle install --global
     fi
+elif [ "$os_name" = "fedora" ]; then
+    echo "Installing packages from fedora.txt"
+    if [ -f "$HOME/.config/yadm/packages/fedora.txt" ]; then
+        # Remove comments and empty lines, then install
+        grep -v '^#' "$HOME/.config/yadm/packages/fedora.txt" | grep -v '^$' | xargs sudo dnf install -y
+    else
+        echo "Warning: fedora.txt not found, skipping package installation"
+    fi
+elif [ "$os_name" = "ubuntu" ]; then
+    echo "Installing packages from ubuntu.txt"
+    if [ -f "$HOME/.config/yadm/packages/ubuntu.txt" ]; then
+        # Remove comments and empty lines, then install
+        grep -v '^#' "$HOME/.config/yadm/packages/ubuntu.txt" | grep -v '^$' | xargs sudo apt install -y
+    else
+        echo "Warning: ubuntu.txt not found, skipping package installation"
+    fi
 fi
 
-nvm install --lts
+# Node.js setup
+if [ "$os_name" = "macos" ]; then
+    # Use nvm on macOS (installed via brew)
+    if command -v nvm >/dev/null 2>&1; then
+        nvm install --lts
+    else
+        echo "Warning: nvm not found, skipping Node.js LTS installation"
+    fi
+else
+    # On Linux, install fnm (Fast Node Manager) as an alternative
+    if ! command -v fnm >/dev/null 2>&1; then
+        echo "Installing fnm (Fast Node Manager)"
+        curl -fsSL https://fnm.vercel.app/install | bash
+        export PATH="$HOME/.fnm:$PATH"
+        eval "$(fnm env --use-on-cd)"
+    fi
+    
+    if command -v fnm >/dev/null 2>&1; then
+        fnm install --lts
+        fnm use lts-latest
+    else
+        echo "Warning: fnm installation failed, using system Node.js"
+    fi
+fi
 
 yadm clone https://github.com/marcodejongh/marcos-yadm-dotfiles.git
 
@@ -67,17 +154,18 @@ if [ ! -d "$HOME/.zprezto/contrib/fzf-tab" ]; then
 fi
 
 
-if [ "$system_type" = "Darwin" ]; then
+# Platform-specific font and app installation
+if [ "$os_name" = "macos" ]; then
     if [ ! -f "$HOME/Library/Fonts/MesloLGS NF Regular.ttf" ]; then
-        echo "Installing fonts"
-        curl -L -o $HOME/Library/Fonts/MesloLGS\ NF\ Regular.ttf https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf
-        curl -L -o $HOME/Library/Fonts/MesloLGS\ NF\ Bold.ttf https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
-        curl -L -o $HOME/Library/Fonts/MesloLGS\ NF\ Italic.ttf https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
-        curl -L -o $HOME/Library/Fonts/MesloLGS\ NF\ Bold\ Italic.ttf https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
+        echo "Installing MesloLGS NF fonts"
+        curl -L -o "$HOME/Library/Fonts/MesloLGS NF Regular.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf
+        curl -L -o "$HOME/Library/Fonts/MesloLGS NF Bold.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
+        curl -L -o "$HOME/Library/Fonts/MesloLGS NF Italic.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
+        curl -L -o "$HOME/Library/Fonts/MesloLGS NF Bold Italic.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
     fi
-    # This didnt work for some reason:
-    # if [ -d " /Applications/1Password.app/" ]; then
-    if [ ! -z $(ls /Applications/ | grep -q -i '1Password')]; then
+    
+    # Check if 1Password is installed
+    if [ ! -d "/Applications/1Password.app" ]; then
         echo "Installing 1password"
         mkdir -p $HOME/tmp/yadm-bootstrap;
         cd $HOME/tmp/yadm-bootstrap;
@@ -85,8 +173,21 @@ if [ "$system_type" = "Darwin" ]; then
         unzip 1Password.zip
         open -W 1Password\ Installer.app
     fi
-else
-    echo "Not installing powerline10k fonts because not running on macos"
+elif [ "$os_name" = "fedora" ] || [ "$os_name" = "ubuntu" ]; then
+    # Install MesloLGS NF fonts on Linux
+    font_dir="$HOME/.local/share/fonts"
+    mkdir -p "$font_dir"
+    
+    if [ ! -f "$font_dir/MesloLGS NF Regular.ttf" ]; then
+        echo "Installing MesloLGS NF fonts"
+        curl -L -o "$font_dir/MesloLGS NF Regular.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf
+        curl -L -o "$font_dir/MesloLGS NF Bold.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
+        curl -L -o "$font_dir/MesloLGS NF Italic.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
+        curl -L -o "$font_dir/MesloLGS NF Bold Italic.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
+        
+        # Refresh font cache
+        fc-cache -f -v
+    fi
 fi 
 
 if yadm remote get-url origin | grep -q -v 'git@github.com:marcodejongh/marcos-yadm-dotfiles.git'; then
@@ -104,9 +205,16 @@ if yadm remote get-url origin | grep -q -v 'git@github.com:marcodejongh/marcos-y
 fi
 
 
+# Git aliases (platform-aware)
 git config --global alias.merge-commits '!funct() { git log --merges --reverse --oneline --ancestry-path $1..origin | grep "Merged pull request";  }; funct'
 git config --global alias.pr-number '!funct() { git merge-commits $1 | head -n1 | sed -n "s/^.*Merged pull request #\\s*\\([0-9]*\\).*$/\\1/p"; }; funct'
 git config --global alias.web-url '!funct() { git config remote.origin.url | sed -e"s/git@/https:\/\//" -e"s/\.git$//" | sed -E "s/(\/\/[^:]*):/\1\//"; }; funct'
-git config --global alias.pr '!funct() { open "`git web-url`/pull/`git pr-number $1`" ;}; funct'
+
+# Platform-specific browser opening
+if [ "$os_name" = "macos" ]; then
+    git config --global alias.pr '!funct() { open "`git web-url`/pull/`git pr-number $1`" ;}; funct'
+else
+    git config --global alias.pr '!funct() { xdg-open "`git web-url`/pull/`git pr-number $1`" ;}; funct'
+fi
 
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm

@@ -20,24 +20,38 @@ if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
   source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 fi
 
-if type brew &>/dev/null
-then
-  FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
-
+# Platform-aware completion setup
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  # macOS with Homebrew
+  if type brew &>/dev/null; then
+    FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
+    autoload -Uz compinit
+    compinit
+  fi
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  # Linux completion setup
   autoload -Uz compinit
   compinit
 fi
 
-export PATH="/Users/mdejongh/.local/state/fnm_multishells/91339_1751348695248/bin":$PATH
-export FNM_MULTISHELL_PATH="/Users/mdejongh/.local/state/fnm_multishells/91339_1751348695248"
-export FNM_VERSION_FILE_STRATEGY="local"
-export FNM_DIR="/Users/mdejongh/.local/share/fnm"
-export FNM_LOGLEVEL="info"
-export FNM_NODE_DIST_MIRROR="https://nodejs.org/dist"
-export FNM_COREPACK_ENABLED="false"
-export FNM_RESOLVE_ENGINES="true"
-export FNM_ARCH="arm64"
-rehash
+# Platform-aware Node.js manager setup
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  # macOS - use nvm if available, otherwise fnm
+  if command -v nvm &>/dev/null; then
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+  elif command -v fnm &>/dev/null; then
+    eval "$(fnm env --use-on-cd --shell zsh)"
+  fi
+else
+  # Linux - use fnm
+  if command -v fnm &>/dev/null; then
+    export FNM_DIR="$HOME/.fnm"
+    export PATH="$HOME/.fnm:$PATH"
+    eval "$(fnm env --use-on-cd --shell zsh)"
+  fi
+fi
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
@@ -64,11 +78,24 @@ tmux-window-name() {
 
 add-zsh-hook chpwd tmux-window-name
 
+# Python environment
 export PATH="${HOME}/.pyenv/shims:${PATH}"
-source ~/.afm-git-configrc
+
+# Git configuration (if exists)
+[ -f ~/.afm-git-configrc ] && source ~/.afm-git-configrc
 
 alias editmydotfiles='code $(yadm ls-tree --name-only --full-tree -r HEAD)'
-export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
+
+# Platform-specific SSH agent setup
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  # macOS - 1Password SSH agent
+  export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
+else
+  # Linux - use system SSH agent or gpg-agent
+  if pgrep -x "gpg-agent" > /dev/null; then
+    export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+  fi
+fi
 
 movToGif() {
     TARGET="${2:-$1.gif}"
@@ -115,26 +142,34 @@ _gt_yargs_completions()
 compdef _gt_yargs_completions gt
 ###-end-gt-completions-###
 
-# https://gist.github.com/dergachev/8259104
-alias sshpbcopy="nc -q0 localhost 5556"
-alias sshdaemon="while (true); do nc -l 5556 | pbcopy; done"
+# Platform-specific clipboard integration
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  # macOS clipboard integration
+  alias sshpbcopy="nc -q0 localhost 5556"
+  alias sshdaemon="while (true); do nc -l 5556 | pbcopy; done"
+else
+  # Linux clipboard integration
+  alias sshpbcopy="nc -q0 localhost 5556"
+  alias sshdaemon="while (true); do nc -l 5556 | xclip -selection clipboard; done"
+fi
 export PATH="$HOME/.cargo/bin:$PATH"
 
 # Render tab characters 2 spaces wide
 #tabs -2
 
-export PATH="/Users/mdejongh/.local/bin:$PATH"
-export PATH="$HOME/.jenv/bin:$PATH"
-eval "$(jenv init -)"
+export PATH="$HOME/.local/bin:$PATH"
 
+# Java environment manager
+if command -v jenv &>/dev/null; then
+  export PATH="$HOME/.jenv/bin:$PATH"
+  eval "$(jenv init -)"
+fi
 
-
-export PATH="/Users/mdejongh/Projects/atlassian/afm/master/afm-tools/path:$PATH"
-
+# Work-specific paths (platform-agnostic)
+export PATH="$HOME/Projects/atlassian/afm/master/afm-tools/path:$PATH"
 export REVIEW_BASE="origin/master"
 export PATH="/opt/atlassian/bin:$PATH"
-
-export PATH="/Users/mdejongh/.orbit/bin:$PATH"
+export PATH="$HOME/.orbit/bin:$PATH"
 
 # Load tmux virtual environment for tmux-window-name plugin
 if [[ -f ~/.tmux_venv/bin/activate ]]; then
@@ -144,14 +179,11 @@ export PATH="/opt/atlassian/bin:$PATH"
 fpath=(~/.zsh $fpath)
 autoload -Uz compinit && compinit
 
-# fnm
-FNM_PATH="/Users/mdejongh/Library/Application Support/fnm"
-if [ -d "$FNM_PATH" ]; then
-  export PATH="/Users/mdejongh/Library/Application Support/fnm:$PATH"
-  eval "`fnm env`"
+# Additional FNM configuration (if not already handled above)
+if [[ "$OSTYPE" == "darwin"* ]] && [ -d "$HOME/Library/Application Support/fnm" ]; then
+  export PATH="$HOME/Library/Application Support/fnm:$PATH"
+  eval "$(fnm env --use-on-cd --shell zsh)"
 fi
-
-eval "$(fnm env --use-on-cd --shell zsh)"
 
 #compdef fnm
 
@@ -159,5 +191,5 @@ eval "$(fnm env --use-on-cd --shell zsh)"
 fpath=(~/.local/share/zsh/completions $fpath)
 autoload -Uz compinit && compinit
 
-fpath=(/Users/mdejongh/.local/share/zsh/completions $fpath)
+fpath=($HOME/.local/share/zsh/completions $fpath)
 gWs() { local wt=$(git worktree list | fzf | awk "{print \$1}"); [[ -n "$wt" ]] && cd "$wt"; }
