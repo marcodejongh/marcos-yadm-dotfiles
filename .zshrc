@@ -178,3 +178,13 @@ autoload -Uz compinit && compinit
 
 fpath=($HOME/.local/share/zsh/completions $fpath)
 gWs() { local wt=$(git worktree list | fzf | awk "{print \$1}"); [[ -n "$wt" ]] && cd "$wt"; }
+
+alias rovo="acli rovodev"
+alias grd="git-root"
+
+# bun completions
+[ -s "/Users/mdejongh/.bun/_bun" ] && source "/Users/mdejongh/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"

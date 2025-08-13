@@ -1,10 +1,7 @@
-# Intentionally made this strict so I dont accidentally use the wrong user info
 [includeIf "gitdir:~/Projects/atlassian/"]
-    path = ~/Projects/atlassian/.gitconfig
-
+	path = ~/Projects/atlassian/.gitconfig
 [includeIf "gitdir:~/Projects/github/"]
-    path = ~/Projects/github/.gitconfig
-
+	path = ~/Projects/github/.gitconfig
 [push]
 	default = simple
 	autoSetupRemote = true
@@ -13,7 +10,7 @@
 [core]
 	editor = vim
 	pager = delta
-		
+	excludesfile = /Users/mdejongh/.gitignore_global
 [init]
 	defaultBranch = main
 [filter "lfs"]
@@ -58,11 +55,13 @@
 [fetch]
 	prune = true
 	pruneTags = true
+	all = false
 [gui]
 	pruneDuringFetch = true
 [user]
 	email = mdejongh@atlassian.com
 	name = Marco de Jongh
+	signingkey = F810F052CAEE17602D4A53D327D29FFED3644076
 [trace2]
 	eventTarget = af_unix:/Users/mdejongh/.gittrace/trace.sock
 	eventBrief = true
@@ -75,6 +74,8 @@
 [maintenance]
 	repo = /Users/mdejongh/Projects/atlassian/afm/master
 	repo = /Users/mdejongh/Projects/atlassian/afm/checkouttwo
+	repo = /Users/mdejongh/Projects/atlassian/afm/small-tasks
+	repo = /Users/mdejongh/Projects/atlassian/afm/cleanup
 [credential]
 	helper = 
 	helper = "\\!f() { op item get 'GitHub Personal Access Token' --fields password 2>/dev/null || echo; }; f"

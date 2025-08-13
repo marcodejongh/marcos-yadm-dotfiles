@@ -59,7 +59,7 @@
   "typescript.format.enable": false,
   "typescript.tsserver.web.projectWideIntellisense.enabled": false,
   "yaml.schemas": {
-    "file:///Users/mdejongh/.vscode/extensions/atlassian.atlascode-3.8.3/resources/schemas/pipelines-schema.json": "bitbucket-pipelines.yml"
+    "file:///Users/mdejongh/.vscode/extensions/atlassian.atlascode-3.8.6/resources/schemas/pipelines-schema.json": "bitbucket-pipelines.yml"
   },
   "git.blame.editorDecoration.enabled": true
 }
