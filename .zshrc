@@ -182,7 +182,6 @@ fpath=($HOME/.local/share/zsh/completions $fpath)
 _current_worktree_bin=""
 
 worktree_path_helper() {
-    echo "Executing worktree path helper"
     local git_root=$(git rev-parse --show-toplevel 2>/dev/null)
     
     # Remove previous worktree bin from PATH if it exists
