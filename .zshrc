@@ -177,50 +177,14 @@ autoload -Uz compinit && compinit
 
 fpath=($HOME/.local/share/zsh/completions $fpath)
 
-# Git worktree PATH management
-_current_worktree_bin=""
+# Git repository bin directory PATH management (using zsh hooks)
+source "$HOME/bin-path-manager.zsh"
 
-worktree_path_helper() {
-    local git_root=$(git rev-parse --show-toplevel 2>/dev/null)
-    
-    # Remove previous worktree bin from PATH if it exists
-    if [[ -n "$_current_worktree_bin" ]]; then
-        export PATH="${PATH//:$_current_worktree_bin/}"
-        export PATH="${PATH//$_current_worktree_bin:/}"
-        export PATH="${PATH//$_current_worktree_bin/}"
-    fi
-    
-    # If we're in a git repo and it has a bin directory, add it to PATH
-    if [[ -n "$git_root" ]] && [[ -d "$git_root/bin" ]]; then
-        _current_worktree_bin="$git_root/bin"
-        export PATH="$_current_worktree_bin:$PATH"
-    else
-        _current_worktree_bin=""
-    fi
-}
-
-# Override cd to automatically manage worktree PATH
-function cd() {
-    builtin cd "$@" && worktree_path_helper
-}
-
-# Also override pushd and popd for completeness  
-function pushd() {
-    builtin pushd "$@" && worktree_path_helper
-}
-
-function popd() {
-    builtin popd "$@" && worktree_path_helper
-}
-
-# Enhanced gWs function that also manages PATH
+# Enhanced gWs function that works with the hook-based PATH management
 gWs() { 
     local wt=$(git worktree list | fzf | awk "{print \$1}")
     [[ -n "$wt" ]] && cd "$wt"
 }
-
-# Initialize worktree PATH management for current directory
-worktree_path_helper
 
 alias rovo="acli rovodev"
 alias grd="git-root"

@@ -1,0 +1,17 @@
+# Repository Bin Directory PATH Management
+#
+# Add this to your .zshrc to automatically manage repository bin/ directories in PATH
+# Copy bin-path-manager.zsh to your home directory or adjust the path below
+
+# Source the bin path manager
+source "$HOME/bin-path-manager.zsh"
+
+# Optional: Enhanced git worktree switching with automatic PATH management
+gWs() { 
+    local wt=$(git worktree list | fzf | awk "{print \$1}")
+    [[ -n "$wt" ]] && cd "$wt"
+}
+
+# Optional: Check current repository bin status
+# Usage: repo-bin-status
+# The bin-path-manager.zsh script provides this alias automatically
