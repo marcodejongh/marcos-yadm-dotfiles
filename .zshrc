@@ -156,7 +156,6 @@ if command -v jenv &>/dev/null; then
 fi
 
 # Work-specific paths (platform-agnostic)
-export PATH="$HOME/Projects/atlassian/afm/master/afm-tools/path:$PATH"
 export REVIEW_BASE="origin/master"
 export PATH="/opt/atlassian/bin:$PATH"
 export PATH="$HOME/.orbit/bin:$PATH"
