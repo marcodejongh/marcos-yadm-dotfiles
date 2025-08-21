@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+"""
+tmux-peacock-sync: Sync tmux pane colors with VSCode Peacock extension colors
+"""
+
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+
+def hex_to_rgb(hex_color):
+    """Convert hex color to RGB tuple"""
+    hex_color = hex_color.lstrip('#')
+    return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+
+
+def rgb_to_hex(rgb):
+    """Convert RGB tuple to hex color"""
+    return f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
+
+
+def mute_color(hex_color, factor=0.3):
+    """Mute a color by blending it with black"""
+    r, g, b = hex_to_rgb(hex_color)
+    # Blend with black to mute the color
+    r = int(r * factor)
+    g = int(g * factor)
+    b = int(b * factor)
+    return rgb_to_hex((r, g, b))
+
+
+def get_peacock_color(directory=None):
+    """Get peacock color from VSCode settings in the given directory"""
+    if directory is None:
+        directory = os.getcwd()
+    
+    vscode_settings = Path(directory) / ".vscode" / "settings.json"
+    
+    if not vscode_settings.exists():
+        return None
+    
+    try:
+        with open(vscode_settings, 'r') as f:
+            settings = json.load(f)
+        
+        return settings.get('peacock.color')
+    except (json.JSONDecodeError, IOError):
+        return None
+
+
+def set_tmux_pane_colors(color):
+    """Set tmux pane border colors for current session only"""
+    if not color:
+        # Reset to default colors (session-specific)
+        subprocess.run(['tmux', 'set-option', 'pane-border-style', 'fg=colour240'], 
+                      capture_output=True)
+        subprocess.run(['tmux', 'set-option', 'pane-active-border-style', 'fg=colour250'], 
+                      capture_output=True)
+        return
+    
+    # Mute the color for subtle borders
+    muted_color = mute_color(color, 0.6)
+    bright_color = mute_color(color, 0.8)
+    
+    # Set inactive pane border to muted color (session-specific)
+    subprocess.run(['tmux', 'set-option', 'pane-border-style', f'fg={muted_color}'], 
+                  capture_output=True)
+    
+    # Set active pane border to brighter version of the color (session-specific)
+    subprocess.run(['tmux', 'set-option', 'pane-active-border-style', f'fg={bright_color}'], 
+                  capture_output=True)
+
+
+def main():
+    """Main function"""
+    # Check if we're in a tmux session
+    if not os.environ.get('TMUX'):
+        sys.exit(0)  # Silent exit if not in tmux
+    
+    # Create a simple lock to prevent multiple instances
+    lock_file = Path("/tmp/tmux-peacock-sync.lock")
+    try:
+        if lock_file.exists():
+            # Check if the lock is stale (older than 5 seconds)
+            if (Path.stat(lock_file).st_mtime + 5) < os.path.getmtime("/tmp"):
+                lock_file.unlink()
+            else:
+                sys.exit(0)  # Another instance is running
+        
+        lock_file.touch()
+        
+        directory = sys.argv[1] if len(sys.argv) > 1 else None
+        peacock_color = get_peacock_color(directory)
+        
+        if peacock_color:
+            set_tmux_pane_colors(peacock_color)
+        else:
+            # Reset to default if no peacock color found
+            set_tmux_pane_colors(None)
+            
+    finally:
+        # Clean up lock file
+        if lock_file.exists():
+            lock_file.unlink()
+
+
+if __name__ == "__main__":
+    main()

@@ -66,7 +66,18 @@ tmux-window-name() {
 	fi
 }
 
+tmux-peacock-update() {
+	# Sync tmux pane colors with VSCode Peacock colors
+	if [[ -n "$TMUX" ]] && command -v tmux-peacock-sync >/dev/null 2>&1; then
+		# Kill any existing background tmux-peacock-sync processes to prevent conflicts
+		pkill -f "tmux-peacock-sync" 2>/dev/null
+		# Run the script directly (not in background to avoid issues)
+		tmux-peacock-sync "$PWD" 2>/dev/null
+	fi
+}
+
 add-zsh-hook chpwd tmux-window-name
+add-zsh-hook chpwd tmux-peacock-update
 
 # Python environment
 export PATH="${HOME}/.pyenv/shims:${PATH}"
