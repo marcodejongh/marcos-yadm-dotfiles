@@ -56,9 +56,9 @@ keybinds clear-defaults=true {
         bind "Ctrl k" { MoveFocus "Up"; }
         bind "Ctrl l" { MoveFocusOrTab "Right"; }
         
-        // FZF-style command palette (equivalent to tmux-fzf)
-        bind "Ctrl p" { LaunchOrFocusPlugin "session-manager" { floating true }; }
-        bind "Ctrl o" { LaunchOrFocusPlugin "session-manager" { floating true }; }
+        // Session management commands (equivalent to tmux-fzf)
+        bind "Ctrl p" { SwitchToMode "session"; }
+        bind "Ctrl o" { SwitchToMode "session"; }
         
         // Copy mode
         bind "Ctrl b" "[" { SwitchToMode "search"; }
@@ -132,10 +132,10 @@ keybinds clear-defaults=true {
         }
         
         // Copy/paste mode
-        bind "p" "Ctrl p" { SwitchToMode "normal"; Paste; }
+        bind "p" "Ctrl p" { SwitchToMode "normal"; }
         
         // Command palette / fzf equivalent
-        bind "Ctrl f" { LaunchOrFocusPlugin "session-manager" { floating true }; SwitchToMode "normal"; }
+        bind "Ctrl f" { SwitchToMode "session"; SwitchToMode "normal"; }
     }
     
     // Locked mode (equivalent to tmux prefix capture)
@@ -235,23 +235,17 @@ keybinds clear-defaults=true {
     session {
         bind "Ctrl c" "Esc" { SwitchToMode "normal"; }
         bind "d" { Detach; }
-        bind "w" { LaunchOrFocusPlugin "session-manager" { floating true; moveable true; }; SwitchToMode "normal"; }
+        bind "w" { SwitchToMode "session"; }
     }
 }
 
 // Plugins configuration
 plugins {
-    tab-bar location="zellij:tab-bar"
-    status-bar location="zellij:status-bar"
-    strider location="zellij:strider"
-    compact-bar location="zellij:compact-bar"
-    session-manager location="zellij:session-manager"
-    welcome-screen location="zellij:session-manager" {
-        welcome_screen true
-    }
-    filepicker location="zellij:strider" {
-        cwd "/"
-    }
+    tab-bar { path "tab-bar"; }
+    status-bar { path "status-bar"; }
+    strider { path "strider"; }
+    compact-bar { path "compact-bar"; }
+    session-manager { path "session-manager"; }
 }
 
 // UI configuration
