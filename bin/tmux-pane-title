@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""
+tmux-pane-title: Generate title for a specific pane based on its directory
+"""
+
+import json
+import os
+import sys
+from pathlib import Path
+
+
+def get_worktree_name(directory):
+    """Get git worktree name from directory path"""
+    path = Path(directory)
+    
+    # Look for afm pattern specifically
+    for part in path.parts:
+        if 'afm' in part:
+            # Find the index of 'afm' in the path
+            afm_index = path.parts.index(part)
+            if afm_index + 1 < len(path.parts):
+                # The next part after 'afm' should be the worktree name
+                worktree_name = path.parts[afm_index + 1]
+                # Skip 'master' as it's not descriptive
+                if worktree_name != 'master':
+                    return worktree_name
+    
+    return None
+
+
+def normalize_path(directory):
+    """Normalize path by replacing /Users/mdejongh with ~"""
+    home_path = "/Users/mdejongh"
+    if directory.startswith(home_path):
+        return directory.replace(home_path, "~", 1)
+    return directory
+
+
+def main():
+    """Generate title for the given directory"""
+    directory = sys.argv[1] if len(sys.argv) > 1 else os.getcwd()
+    
+    worktree_name = get_worktree_name(directory)
+    
+    if worktree_name:
+        print(worktree_name)
+    else:
+        # Show the normalized path, but if it's just ~, show ~ not the basename
+        normalized_path = normalize_path(directory)
+        if normalized_path == "~":
+            print("~")
+        else:
+            print(Path(normalized_path).name or normalized_path)
+
+
+if __name__ == "__main__":
+    main()

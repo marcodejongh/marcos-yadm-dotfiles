@@ -75,7 +75,18 @@ def get_peacock_color(directory=None):
         return None
 
 
-def set_tmux_pane_colors(color, worktree_name=None):
+def normalize_path(directory):
+    """Normalize path by replacing /Users/mdejongh with ~"""
+    if directory is None:
+        directory = os.getcwd()
+    
+    home_path = "/Users/mdejongh"
+    if directory.startswith(home_path):
+        return directory.replace(home_path, "~", 1)
+    return directory
+
+
+def set_tmux_pane_colors(color, worktree_name=None, directory=None):
     """Set tmux pane border colors and format for current session only"""
     # Set colors based on peacock color or defaults
     if color:
@@ -98,16 +109,11 @@ def set_tmux_pane_colors(color, worktree_name=None):
                       capture_output=True)
         bright_color = 'colour250'  # Use default bright color for text
     
-    # Always update border format (never turn off pane-border-status)
-    if worktree_name:
-        # Set pane border format to show worktree name on active pane
-        border_format = f'#{{?pane_active,#[fg={bright_color}][ {worktree_name} ],}}'
-        subprocess.run(['tmux', 'set-option', 'pane-border-format', border_format], 
-                      capture_output=True)
-    else:
-        # No worktree name, set empty border format but keep status on
-        subprocess.run(['tmux', 'set-option', 'pane-border-format', ''], 
-                      capture_output=True)
+    # Set a dynamic border format that calls our script for each pane's title
+    # Each pane will show its own worktree name or directory basename
+    border_format = f'#{{?pane_active,#[fg={bright_color}],#[fg=colour240]}}[ #(~/bin/tmux-pane-title "#{{pane_current_path}}") ]'
+    subprocess.run(['tmux', 'set-option', 'pane-border-format', border_format], 
+                  capture_output=True)
 
 
 def main():
@@ -132,9 +138,9 @@ def main():
         peacock_color = get_peacock_color(directory)
         worktree_name = get_worktree_name(directory)
         
-        # Always call set_tmux_pane_colors with both color and worktree_name
+        # Always call set_tmux_pane_colors with all parameters
         # It will handle the logic internally
-        set_tmux_pane_colors(peacock_color, worktree_name)
+        set_tmux_pane_colors(peacock_color, worktree_name, directory)
             
     finally:
         # Clean up lock file
