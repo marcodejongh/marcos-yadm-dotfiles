@@ -27,6 +27,64 @@ copy_on_select true
 // Theme (closest to Solarized dark from tmux config)
 theme "gruvbox-dark"
 
+// Load custom themes
+themes {
+    // Include peacock themes
+    peacock-blue {
+        fg 240 248 255
+        bg 13 17 23
+        red 255 129 129
+        green 166 227 161
+        yellow 255 238 140
+        blue 140 170 238
+        magenta 255 158 206
+        orange 255 169 113
+        cyan 154 230 255
+        black 40 44 52
+        white 171 178 191
+
+        // Pane frames - blue theme
+        ribbon 58 112 168
+        tab 30 30 46
+    }
+    
+    peacock-green {
+        fg 240 248 255
+        bg 13 17 23
+        red 255 129 129
+        green 166 227 161
+        yellow 255 238 140
+        blue 140 170 238
+        magenta 255 158 206
+        orange 255 169 113
+        cyan 154 230 255
+        black 40 44 52
+        white 171 178 191
+
+        // Pane frames - green theme
+        ribbon 34 139 34
+        tab 30 46 30
+    }
+    
+    peacock-purple {
+        fg 240 248 255
+        bg 13 17 23
+        red 255 129 129
+        green 166 227 161
+        yellow 255 238 140
+        blue 140 170 238
+        magenta 255 158 206
+        orange 255 169 113
+        cyan 154 230 255
+        black 40 44 52
+        white 171 178 191
+
+        // Pane frames - purple theme
+        ribbon 147 112 219
+        tab 46 30 46
+    }
+}
+
 // Enable automatic pane closing
 on_force_close "quit"
 

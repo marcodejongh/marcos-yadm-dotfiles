@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-zellij-peacock-sync: Sync zellij colors with VSCode Peacock extension colors
-Note: Zellij has limited runtime color customization compared to tmux.
-This script primarily handles theme detection and can be extended for future zellij features.
+zellij-peacock-sync: Sync zellij with VSCode Peacock extension colors and directory context
+Provides dynamic tab naming and theme suggestions based on peacock colors and git worktrees.
 """
 
 import json
@@ -90,22 +89,33 @@ def set_zellij_tab_name(worktree_name=None, directory=None):
         pass
 
 
-def detect_and_suggest_theme(peacock_color):
-    """Detect peacock color and suggest appropriate zellij theme"""
+def detect_peacock_theme(peacock_color):
+    """Detect peacock color and suggest appropriate custom zellij theme"""
     if not peacock_color:
         return "gruvbox-dark"  # default
     
-    # Simple color-to-theme mapping
+    # Map peacock colors to our custom themes
     color_lower = peacock_color.lower()
     
-    if 'blue' in color_lower or peacock_color.startswith('#00') or peacock_color.startswith('#0066'):
-        return "tokyo-night"
-    elif 'green' in color_lower or peacock_color.startswith('#0f') or peacock_color.startswith('#22'):
-        return "gruvbox-dark"
-    elif 'purple' in color_lower or peacock_color.startswith('#6f') or peacock_color.startswith('#7c'):
-        return "catppuccin-mocha"
-    elif 'red' in color_lower or peacock_color.startswith('#f') or peacock_color.startswith('#d'):
-        return "kanagawa"
+    # Blue colors
+    if ('blue' in color_lower or 
+        peacock_color.startswith('#00') or peacock_color.startswith('#0066') or
+        peacock_color.startswith('#1e90ff') or peacock_color.startswith('#4169e1')):
+        return "peacock-blue"
+    
+    # Green colors  
+    elif ('green' in color_lower or
+          peacock_color.startswith('#0f') or peacock_color.startswith('#22') or
+          peacock_color.startswith('#228b22') or peacock_color.startswith('#32cd32')):
+        return "peacock-green"
+    
+    # Purple colors
+    elif ('purple' in color_lower or 'violet' in color_lower or
+          peacock_color.startswith('#6f') or peacock_color.startswith('#7c') or
+          peacock_color.startswith('#9370db') or peacock_color.startswith('#8a2be2')):
+        return "peacock-purple"
+    
+    # Default fallback
     else:
         return "gruvbox-dark"
 
@@ -135,10 +145,16 @@ def main():
         # Set tab name based on context
         set_zellij_tab_name(worktree_name, directory)
         
-        # For future enhancement: theme switching based on peacock color
-        # suggested_theme = detect_and_suggest_theme(peacock_color)
-        # Note: Zellij doesn't support runtime theme switching yet,
-        # but this could be useful for generating per-project configs
+        # Log peacock theme detection for debugging
+        if peacock_color:
+            suggested_theme = detect_peacock_theme(peacock_color)
+            # Create a state file to communicate theme to shell hooks
+            state_file = Path("/tmp/zellij-peacock-theme.state")
+            try:
+                with open(state_file, 'w') as f:
+                    f.write(f"{suggested_theme}\n{peacock_color}\n{worktree_name or 'none'}\n")
+            except Exception:
+                pass  # Silently fail if can't write state
             
     finally:
         # Clean up lock file
@@ -146,5 +162,21 @@ def main():
             lock_file.unlink()
 
 
+def get_suggested_theme():
+    """Get the suggested theme from state file (for shell integration)"""
+    state_file = Path("/tmp/zellij-peacock-theme.state")
+    if state_file.exists():
+        try:
+            with open(state_file, 'r') as f:
+                lines = f.read().strip().split('\n')
+                return lines[0] if lines else "gruvbox-dark"
+        except Exception:
+            pass
+    return "gruvbox-dark"
+
+
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1 and sys.argv[1] == "--get-theme":
+        print(get_suggested_theme())
+    else:
+        main()
