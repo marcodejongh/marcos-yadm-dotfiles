@@ -68,11 +68,11 @@ tmux-window-name() {
 
 tmux-peacock-update() {
 	# Sync tmux pane colors with VSCode Peacock colors
-	if [[ -n "$TMUX" ]] && command -v tmux-peacock-sync >/dev/null 2>&1; then
+	if [[ -n "$TMUX" ]] && [[ -x "~/bin/tmux-peacock-sync" ]]; then
 		# Kill any existing background tmux-peacock-sync processes to prevent conflicts
 		pkill -f "tmux-peacock-sync" 2>/dev/null
 		# Run the script directly (not in background to avoid issues)
-		tmux-peacock-sync "$PWD" 2>/dev/null
+		~/bin/tmux-peacock-sync "$PWD" 2>/dev/null
 	fi
 }
 

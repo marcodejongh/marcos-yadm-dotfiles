@@ -8,6 +8,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+import re
 
 
 def hex_to_rgb(hex_color):
@@ -31,6 +32,30 @@ def mute_color(hex_color, factor=0.3):
     return rgb_to_hex((r, g, b))
 
 
+def get_worktree_name(directory=None):
+    """Get git worktree name from directory path"""
+    if directory is None:
+        directory = os.getcwd()
+    
+    # Check if we're in a git worktree by looking for common patterns
+    # Typical pattern: /path/to/project/worktree-name
+    path = Path(directory)
+    
+    # Look for afm pattern specifically
+    for part in path.parts:
+        if 'afm' in part:
+            # Find the index of 'afm' in the path
+            afm_index = path.parts.index(part)
+            if afm_index + 1 < len(path.parts):
+                # The next part after 'afm' should be the worktree name
+                worktree_name = path.parts[afm_index + 1]
+                # Skip 'master' as it's not descriptive
+                if worktree_name != 'master':
+                    return worktree_name
+    
+    return None
+
+
 def get_peacock_color(directory=None):
     """Get peacock color from VSCode settings in the given directory"""
     if directory is None:
@@ -50,27 +75,39 @@ def get_peacock_color(directory=None):
         return None
 
 
-def set_tmux_pane_colors(color):
-    """Set tmux pane border colors for current session only"""
-    if not color:
-        # Reset to default colors (session-specific)
+def set_tmux_pane_colors(color, worktree_name=None):
+    """Set tmux pane border colors and format for current session only"""
+    # Set colors based on peacock color or defaults
+    if color:
+        # Mute the color for subtle borders
+        muted_color = mute_color(color, 0.6)
+        bright_color = mute_color(color, 0.8)
+        
+        # Set inactive pane border to muted color (session-specific)
+        subprocess.run(['tmux', 'set-option', 'pane-border-style', f'fg={muted_color}'], 
+                      capture_output=True)
+        
+        # Set active pane border to brighter version of the color (session-specific)
+        subprocess.run(['tmux', 'set-option', 'pane-active-border-style', f'fg={bright_color}'], 
+                      capture_output=True)
+    else:
+        # Use default colors when no peacock color
         subprocess.run(['tmux', 'set-option', 'pane-border-style', 'fg=colour240'], 
                       capture_output=True)
         subprocess.run(['tmux', 'set-option', 'pane-active-border-style', 'fg=colour250'], 
                       capture_output=True)
-        return
+        bright_color = 'colour250'  # Use default bright color for text
     
-    # Mute the color for subtle borders
-    muted_color = mute_color(color, 0.6)
-    bright_color = mute_color(color, 0.8)
-    
-    # Set inactive pane border to muted color (session-specific)
-    subprocess.run(['tmux', 'set-option', 'pane-border-style', f'fg={muted_color}'], 
-                  capture_output=True)
-    
-    # Set active pane border to brighter version of the color (session-specific)
-    subprocess.run(['tmux', 'set-option', 'pane-active-border-style', f'fg={bright_color}'], 
-                  capture_output=True)
+    # Always update border format (never turn off pane-border-status)
+    if worktree_name:
+        # Set pane border format to show worktree name on active pane
+        border_format = f'#{{?pane_active,#[fg={bright_color}][ {worktree_name} ],}}'
+        subprocess.run(['tmux', 'set-option', 'pane-border-format', border_format], 
+                      capture_output=True)
+    else:
+        # No worktree name, set empty border format but keep status on
+        subprocess.run(['tmux', 'set-option', 'pane-border-format', ''], 
+                      capture_output=True)
 
 
 def main():
@@ -93,12 +130,11 @@ def main():
         
         directory = sys.argv[1] if len(sys.argv) > 1 else None
         peacock_color = get_peacock_color(directory)
+        worktree_name = get_worktree_name(directory)
         
-        if peacock_color:
-            set_tmux_pane_colors(peacock_color)
-        else:
-            # Reset to default if no peacock color found
-            set_tmux_pane_colors(None)
+        # Always call set_tmux_pane_colors with both color and worktree_name
+        # It will handle the logic internally
+        set_tmux_pane_colors(peacock_color, worktree_name)
             
     finally:
         # Clean up lock file
