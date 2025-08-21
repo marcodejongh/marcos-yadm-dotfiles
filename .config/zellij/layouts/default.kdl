@@ -1,0 +1,29 @@
+// ~/.config/zellij/layouts/default.kdl
+// Default layout configuration matching tmux workflow
+
+layout {
+    default_tab_template {
+        pane size=1 borderless=true {
+            plugin location="zellij:compact-bar"
+        }
+        children
+    }
+    
+    tab name="main" focus=true {
+        pane {
+            // Main working pane - equivalent to tmux's first window
+        }
+    }
+    
+    // Additional tab templates can be added here
+    // This matches the clean, minimal setup from your tmux config
+}
+
+// Session configuration
+session_name "main"
+
+// Enable auto-layout for better pane management
+auto_layout true
+
+// Attach to session if it exists, create if it doesn't
+attach_to_session true
