@@ -3,10 +3,10 @@
 
 # Function to update zellij tab name and theme based on current directory
 function _zellij_update_context() {
-    # Only run if we're in a zellij session
-    if [[ -n "$ZELLIJ" ]]; then
-        # Run the peacock sync script
-        ~/bin/zellij-peacock-sync "$PWD" 2>/dev/null &
+    # Only run if we're in a zellij session (not tmux) and script exists
+    if [[ -n "$ZELLIJ" && -z "$TMUX" && -x ~/bin/zellij-peacock-sync ]]; then
+        # Run the peacock sync script (not in background to avoid race conditions)
+        ~/bin/zellij-peacock-sync "$PWD" 2>/dev/null
         
         # Optional: Apply theme switching (requires session restart currently)
         # This creates a project-specific config that could be used for new sessions
@@ -18,10 +18,8 @@ function _zellij_update_context() {
     fi
 }
 
-# Hook to run on directory change
-function chpwd() {
-    _zellij_update_context
-}
+# Hook to run on directory change (using zsh hook system to avoid conflicts)
+add-zsh-hook chpwd _zellij_update_context
 
 # Run once when shell starts
 _zellij_update_context

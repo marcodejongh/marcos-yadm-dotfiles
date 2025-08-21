@@ -79,6 +79,11 @@ tmux-peacock-update() {
 add-zsh-hook chpwd tmux-window-name
 add-zsh-hook chpwd tmux-peacock-update
 
+# Zellij integration (only load if zellij is installed and available)
+if command -v zellij &>/dev/null && [[ -f ~/.config/zellij/zsh-integration.zsh ]]; then
+  source ~/.config/zellij/zsh-integration.zsh
+fi
+
 # Python environment
 export PATH="${HOME}/.pyenv/shims:${PATH}"
 
