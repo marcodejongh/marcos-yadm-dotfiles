@@ -5,27 +5,84 @@ tmux-pane-title: Generate title for a specific pane based on its directory
 
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
 
-def get_worktree_name(directory):
-    """Get git worktree name from directory path"""
-    path = Path(directory)
+def get_git_toplevel(directory):
+    """Get git repository toplevel using git rev-parse"""
+    try:
+        result = subprocess.run(
+            ['git', 'rev-parse', '--show-toplevel'],
+            cwd=directory,
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except (subprocess.SubprocessError, FileNotFoundError):
+        pass
+    return None
+
+
+def get_worktree_info(directory):
+    """Get worktree name and relative path within the worktree"""
+    git_root = get_git_toplevel(directory)
+    if not git_root:
+        return None, None
     
-    # Look for afm pattern specifically
-    for part in path.parts:
-        if 'afm' in part:
+    git_root_path = Path(git_root)
+    current_path = Path(directory)
+    
+    # Look for afm pattern in the git root specifically
+    # First, try to find just "afm" (not afm-tools)
+    for part in git_root_path.parts:
+        if part == 'afm':  # Look for exact "afm" match first
             # Find the index of 'afm' in the path
-            afm_index = path.parts.index(part)
-            if afm_index + 1 < len(path.parts):
+            afm_index = git_root_path.parts.index(part)
+            if afm_index + 1 < len(git_root_path.parts):
                 # The next part after 'afm' should be the worktree name
-                worktree_name = path.parts[afm_index + 1]
+                worktree_name = git_root_path.parts[afm_index + 1]
                 # Skip 'master' as it's not descriptive
                 if worktree_name != 'master':
-                    return worktree_name
+                    # Calculate relative path from git root to current directory
+                    try:
+                        rel_path = current_path.relative_to(git_root_path)
+                        if str(rel_path) == '.':
+                            # At git root, show just the worktree name
+                            return worktree_name, None
+                        else:
+                            # In subdirectory, show worktree/subdir
+                            return worktree_name, str(rel_path)
+                    except ValueError:
+                        # current_path is not relative to git_root_path
+                        return worktree_name, None
+                    
+    # Fallback: look for any part containing 'afm' if exact match failed
+    for part in git_root_path.parts:
+        if 'afm' in part and part != git_root_path.name:  # Skip the final afm-tools part
+            # Find the index of 'afm' in the path
+            afm_index = git_root_path.parts.index(part)
+            if afm_index + 1 < len(git_root_path.parts):
+                # The next part after 'afm' should be the worktree name
+                worktree_name = git_root_path.parts[afm_index + 1]
+                # Skip 'master' as it's not descriptive
+                if worktree_name != 'master':
+                    # Calculate relative path from git root to current directory
+                    try:
+                        rel_path = current_path.relative_to(git_root_path)
+                        if str(rel_path) == '.':
+                            # At git root, show just the worktree name
+                            return worktree_name, None
+                        else:
+                            # In subdirectory, show worktree/subdir
+                            return worktree_name, str(rel_path)
+                    except ValueError:
+                        # current_path is not relative to git_root_path
+                        return worktree_name, None
     
-    return None
+    return None, None
 
 
 def normalize_path(directory):
@@ -40,10 +97,13 @@ def main():
     """Generate title for the given directory"""
     directory = sys.argv[1] if len(sys.argv) > 1 else os.getcwd()
     
-    worktree_name = get_worktree_name(directory)
+    worktree_name, subdir = get_worktree_info(directory)
     
     if worktree_name:
-        print(worktree_name)
+        if subdir:
+            print(f"{worktree_name}/{subdir}")
+        else:
+            print(worktree_name)
     else:
         # Show the normalized path, but if it's just ~, show ~ not the basename
         normalized_path = normalize_path(directory)
