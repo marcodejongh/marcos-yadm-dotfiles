@@ -61,6 +61,11 @@ if [ "$os_name" = "macos" ]; then
     
     echo "Updating to latest apple software"
     sudo softwareupdate -i -a
+    
+    # Set faster key repeat rates (similar to Linux defaults)
+    echo "Configuring faster key repeat rates"
+    defaults write -g KeyRepeat -int 2
+    defaults write -g InitialKeyRepeat -int 15
 elif [ "$os_name" = "fedora" ]; then
     echo "Updating system packages (you may be prompted for password)"
     sudo dnf update -y || echo "Warning: System update failed, continuing..."
