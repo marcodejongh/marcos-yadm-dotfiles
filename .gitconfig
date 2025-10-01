@@ -11,13 +11,21 @@
 	editor = vim
 	pager = delta
 	excludesfile = /Users/mdejongh/.gitignore_global
+	# Performance optimizations for large repositories
+	fsmonitor = true
+	untrackedcache = true
+	commitgraph = true
+	multipackindex = true
+	# sparseCheckoutCone = true  # Disabled for libgit2 compatibility
 [init]
 	defaultBranch = main
-[filter "lfs"]
-	clean = git-lfs clean -- %f
-	smudge = git-lfs smudge -- %f
-	process = git-lfs filter-process
-	required = true
+# [filter "lfs"]
+#	clean = git-lfs clean -- %f
+#	smudge = git-lfs smudge -- %f
+#	process = git-lfs filter-process
+#	required = true
+# Git LFS disabled - use 'git lfs install' to re-enable if needed
+# For on-demand LFS: git config lfs.fetchinclude "path/to/needed/files"
 [alias]
 	merge-commits = "!funct() { git log --merges --reverse --oneline --ancestry-path $1..origin | grep \"Merged pull request\";  }; funct"
 	pr-number = "!funct() { git merge-commits $1 | head -n1 | sed -n \"s/^.*Merged pull request #\\\\s*\\\\([0-9]*\\\\).*$/\\\\1/p\"; }; funct"
@@ -71,18 +79,6 @@
 	provider = generic
 [http]
 	useragent = bb-cli/0.4.0
-[maintenance]
-	repo = /Users/mdejongh/Projects/atlassian/afm/master
-	repo = /Users/mdejongh/Projects/atlassian/afm/checkouttwo
-	repo = /Users/mdejongh/Projects/atlassian/afm/small-tasks
-	repo = /Users/mdejongh/Projects/atlassian/afm/cleanup
-[credential]
-	helper = 
-	helper = "\\!f() { op item get 'GitHub Personal Access Token' --fields password 2>/dev/null || echo; }; f"
-[credential "https://dev.azure.com"]
-	useHttpPath = true
-[commit]
-	verbose = true
 [rerere]
 	enabled = true
 	autoupdate = true
@@ -101,3 +97,29 @@
 	algorithm = histogram
 [help]
 	autocorrect = prompt
+[commit]
+	verbose = true
+[feature]
+	# Enable all performance features for large repositories
+	manyFiles = true
+[gc]
+	# Better garbage collection for large repos
+	cruftPacks = true
+[pack]
+	# Speed up object counting and packfile operations
+	useBitmaps = true
+	writeReverseIndex = true
+[index]
+	# Skip SHA verification for index (safe on SSDs) - disabled for libgit2 compatibility
+	# skipHash = true
+[fetch]
+	# Update commit graph on fetch
+	writeCommitGraph = true
+[maintenance]
+	repo = /Users/mdejongh/Projects/atlassian/afm-shallow/.bare
+	repo = /Users/mdejongh/Projects/atlassian/afm/afm-bin-autoswitching
+	repo = /Users/mdejongh/Projects/atlassian/afm/isl
+	repo = /Users/mdejongh/Projects/atlassian/afm/master
+	repo = /Users/mdejongh/Projects/atlassian/spr_rebase_fix
+	repo = /Users/mdejongh/Projects/atlassian/afm/add-spr-commit-amend
+	repo = /Users/mdejongh/Projects/atlassian/afm/afm-install

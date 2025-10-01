@@ -60,18 +60,17 @@ alias sa='alias | fzf'
 export TMUX_PLUGINS_PATH=~/.tmux/plugins
 
 tmux-window-name() {
-	# Only run if we're in a tmux session and the plugin exists
-	if [[ -n "$TMUX" ]] && [ -f "$TMUX_PLUGINS_PATH/tmux-window-name/scripts/rename_session_windows.py" ]; then
+	# Only run if we're in a tmux session, plugin exists, and we're in work directories
+	if [[ -n "$TMUX" ]] && [ -f "$TMUX_PLUGINS_PATH/tmux-window-name/scripts/rename_session_windows.py" ] && [[ "$PWD" == */Projects/* ]]; then
 		($TMUX_PLUGINS_PATH/tmux-window-name/scripts/rename_session_windows.py &)
 	fi
 }
 
 tmux-peacock-update() {
 	# Sync tmux pane colors with VSCode Peacock colors
-	if [[ -n "$TMUX" ]] && [[ -x "~/bin/tmux-peacock-sync" ]]; then
-		# Kill any existing background tmux-peacock-sync processes to prevent conflicts
-		pkill -f "tmux-peacock-sync" 2>/dev/null
-		# Run the script directly (not in background to avoid issues)
+	# Only run in large repos to reduce overhead
+	if [[ -n "$TMUX" ]] && [[ -x "~/bin/tmux-peacock-sync" ]] && [[ "$PWD" == */atlassian/* ]]; then
+		# Run the script directly without killing processes
 		~/bin/tmux-peacock-sync "$PWD" 2>/dev/null
 	fi
 }
@@ -102,6 +101,19 @@ else
     export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
   fi
 fi
+
+# Consolidate PATH management to prevent duplicates
+_add_to_path() {
+  local dir="$1"
+  [[ -d "$dir" ]] && [[ ":$PATH:" != *":$dir:"* ]] && PATH="$dir:$PATH"
+}
+
+# Clean and rebuild essential PATH entries
+_add_to_path "$HOME/.local/bin"
+_add_to_path "$HOME/.cargo/bin"
+_add_to_path "$HOME/.bun/bin"
+_add_to_path "$HOME/.orbit/bin"
+_add_to_path "/opt/atlassian/bin"
 
 movToGif() {
     TARGET="${2:-$1.gif}"
@@ -158,12 +170,8 @@ else
   alias sshpbcopy="nc -q0 localhost 5556"
   alias sshdaemon="while (true); do nc -l 5556 | xclip -selection clipboard; done"
 fi
-export PATH="$HOME/.cargo/bin:$PATH"
-
 # Render tab characters 2 spaces wide
 #tabs -2
-
-export PATH="$HOME/.local/bin:$PATH"
 
 # Java environment manager
 if command -v jenv &>/dev/null; then
@@ -173,25 +181,17 @@ fi
 
 # Work-specific paths (platform-agnostic)
 export REVIEW_BASE="origin/master"
-export PATH="/opt/atlassian/bin:$PATH"
-export PATH="$HOME/.orbit/bin:$PATH"
 
 # Load tmux virtual environment for tmux-window-name plugin (if it exists)
 if [[ -f ~/.tmux_venv/bin/activate ]]; then
   source ~/.tmux_venv/bin/activate
 fi
-export PATH="/opt/atlassian/bin:$PATH"
-fpath=(~/.zsh $fpath)
+# Completion setup - consolidate to prevent duplicates
+fpath=(~/.zsh ~/.local/share/zsh/completions $HOME/.local/share/zsh/completions $fpath)
+# Only run compinit once
 autoload -Uz compinit && compinit
-
 
 #compdef fnm
-
-# Added by spr for shell completions
-fpath=(~/.local/share/zsh/completions $fpath)
-autoload -Uz compinit && compinit
-
-fpath=($HOME/.local/share/zsh/completions $fpath)
 
 # Git repository bin directory PATH management (using zsh hooks)
 source "$HOME/bin-path-manager.zsh"
@@ -210,4 +210,7 @@ alias grd="git-root"
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
+
+[[ -n "$ZSH_VERSION" ]] && source "/Users/mdejongh/.afm-bin-path-manager.zsh"
+
+[[ -n "$BASH_VERSION" ]] && source "/Users/mdejongh/.afm-bin-path-manager.bash"

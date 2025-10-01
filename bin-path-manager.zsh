@@ -16,14 +16,23 @@
 # - Works with all directory change methods (cd, pushd, popd, autocd, etc.)
 #
 
-# Global variable to track current repository bin path
+# Global variables to track current repository bin path and cache git root
 typeset -g _current_repo_bin=""
+typeset -g _cached_git_root=""
 
 # Function to manage repository bin directory in PATH
 _manage_repo_bin_path() {
     emulate -L zsh
     
-    local git_root=$(git rev-parse --show-toplevel 2>/dev/null)
+    # Cache git root check to avoid repeated git calls
+    local git_root
+    if [[ -n "$_cached_git_root" ]] && [[ "$PWD" == "$_cached_git_root"* ]]; then
+        git_root="$_cached_git_root"
+    else
+        git_root=$(git rev-parse --show-toplevel 2>/dev/null)
+        _cached_git_root="$git_root"
+    fi
+    
     local new_bin_path=""
     
     # If we're in a git repo and it has a bin directory, set the new path
