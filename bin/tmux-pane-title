@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/Users/mdejongh/.tmux_venv/bin/python3
 """
 tmux-pane-title: Generate title for a specific pane based on its directory
 """
@@ -27,7 +27,7 @@ def get_git_toplevel(directory):
 
 
 def get_worktree_info(directory):
-    """Get worktree name and relative path within the worktree"""
+    """Get worktree/repo name and relative path within it"""
     git_root = get_git_toplevel(directory)
     if not git_root:
         return None, None
@@ -35,54 +35,46 @@ def get_worktree_info(directory):
     git_root_path = Path(git_root)
     current_path = Path(directory)
     
-    # Look for afm pattern in the git root specifically
-    # First, try to find just "afm" (not afm-tools)
-    for part in git_root_path.parts:
-        if part == 'afm':  # Look for exact "afm" match first
-            # Find the index of 'afm' in the path
-            afm_index = git_root_path.parts.index(part)
-            if afm_index + 1 < len(git_root_path.parts):
-                # The next part after 'afm' should be the worktree name
-                worktree_name = git_root_path.parts[afm_index + 1]
-                # Skip 'master' as it's not descriptive
-                if worktree_name != 'master':
-                    # Calculate relative path from git root to current directory
-                    try:
-                        rel_path = current_path.relative_to(git_root_path)
-                        if str(rel_path) == '.':
-                            # At git root, show just the worktree name
-                            return worktree_name, None
-                        else:
-                            # In subdirectory, show worktree/subdir
-                            return worktree_name, str(rel_path)
-                    except ValueError:
-                        # current_path is not relative to git_root_path
-                        return worktree_name, None
-                    
-    # Fallback: look for any part containing 'afm' if exact match failed
-    for part in git_root_path.parts:
-        if 'afm' in part and part != git_root_path.name:  # Skip the final afm-tools part
-            # Find the index of 'afm' in the path
-            afm_index = git_root_path.parts.index(part)
-            if afm_index + 1 < len(git_root_path.parts):
-                # The next part after 'afm' should be the worktree name
-                worktree_name = git_root_path.parts[afm_index + 1]
-                # Skip 'master' as it's not descriptive
-                if worktree_name != 'master':
-                    # Calculate relative path from git root to current directory
-                    try:
-                        rel_path = current_path.relative_to(git_root_path)
-                        if str(rel_path) == '.':
-                            # At git root, show just the worktree name
-                            return worktree_name, None
-                        else:
-                            # In subdirectory, show worktree/subdir
-                            return worktree_name, str(rel_path)
-                    except ValueError:
-                        # current_path is not relative to git_root_path
-                        return worktree_name, None
+    # Check if this is a worktree using git command
+    try:
+        # Check if .git is a file (indicates worktree) vs directory (main repo)
+        git_path = git_root_path / '.git'
+        if git_path.exists() and git_path.is_file():
+            # This is a worktree - use the directory name
+            repo_name = git_root_path.name
+        else:
+            # This is a regular repo - get the actual repo name
+            # Try to get remote origin to find real repo name
+            result = subprocess.run(
+                ['git', 'remote', 'get-url', 'origin'],
+                cwd=directory,
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                # Extract repo name from URL (e.g., git@github.com:user/repo.git -> repo)
+                url = result.stdout.strip()
+                repo_name = url.rstrip('/').rstrip('.git').split('/')[-1]
+            else:
+                # No remote, use directory name
+                repo_name = git_root_path.name
+    except (subprocess.SubprocessError, FileNotFoundError):
+        # Fallback to directory name
+        repo_name = git_root_path.name
     
-    return None, None
+    # Get relative path within the repo/worktree
+    try:
+        rel_path = current_path.relative_to(git_root_path)
+        if str(rel_path) == '.':
+            return repo_name, None
+        else:
+            # Truncate long paths
+            rel_str = str(rel_path)
+            if len(rel_str) > 20:
+                rel_str = '...' + rel_str[-17:]
+            return repo_name, rel_str
+    except ValueError:
+        return repo_name, None
 
 
 def normalize_path(directory):

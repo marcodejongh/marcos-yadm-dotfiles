@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/Users/mdejongh/.tmux_venv/bin/python3
 """
 tmux-peacock-sync: Sync tmux pane colors with VSCode Peacock extension colors
 """
