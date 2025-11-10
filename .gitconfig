@@ -43,7 +43,6 @@
 	wt = "!f() { cd $(git worktree list | fzf | awk \"{print \\$1}\") && exec $SHELL; }; f"
 	gWs = "!f() { cd $(git worktree list | fzf | awk \"{print \\$1}\") && exec $SHELL; }; f"
 [interactive]
-	diffFilter = difft
 [color]
 	ui = true
 [color "diff-highlight"]
