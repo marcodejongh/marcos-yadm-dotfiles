@@ -10,7 +10,7 @@
 	pushDefault = origin
 [core]
 	editor = vim
-	pager = difft
+	pager = less
 	excludesfile = /Users/mdejongh/.gitignore_global
 	# Performance optimizations for large repositories
 	fsmonitor = true
@@ -90,6 +90,7 @@
 [pull]
 	rebase = true
 [diff]
+	external = difft
 	colorMoved = plain
 	mnemonicPrefix = true
 	renames = true
