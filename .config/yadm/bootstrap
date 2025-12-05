@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+set -e
 
 # Store the original directory for accessing config files
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -7,7 +8,6 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # Because Git submodule commands cannot operate without a work tree, they must
 # be run from within $HOME (assuming this is the root of your dotfiles)
 cd "$HOME"
-set -e 
 
 echo "Install starting..."
 
@@ -30,8 +30,14 @@ case "$system_type" in
                     package_manager="dnf"
                     ;;
                 ubuntu|debian)
-                    os_name="ubuntu"
-                    package_manager="apt"
+                    # Check if this is a Proxmox node
+                    if [ -d /etc/pve ]; then
+                        os_name="proxmox"
+                        package_manager="apt"
+                    else
+                        os_name="ubuntu"
+                        package_manager="apt"
+                    fi
                     ;;
                 *)
                     echo "Unsupported Linux distribution: $ID"
@@ -70,6 +76,10 @@ elif [ "$os_name" = "fedora" ]; then
     echo "Updating system packages (you may be prompted for password)"
     sudo dnf update -y || echo "Warning: System update failed, continuing..."
 elif [ "$os_name" = "ubuntu" ]; then
+    echo "Updating system packages (you may be prompted for password)"
+    sudo apt update && sudo apt upgrade -y || echo "Warning: System update failed, continuing..."
+elif [ "$os_name" = "proxmox" ]; then
+    echo "Proxmox node detected - minimal setup mode"
     echo "Updating system packages (you may be prompted for password)"
     sudo apt update && sudo apt upgrade -y || echo "Warning: System update failed, continuing..."
 fi
@@ -290,10 +300,46 @@ EOF
     else
         echo "Warning: ubuntu.txt not found, skipping package installation"
     fi
+elif [ "$os_name" = "proxmox" ]; then
+    echo "Installing minimal packages for Proxmox from proxmox.txt"
+    proxmox_packages="$HOME/.config/yadm/packages/proxmox.txt"
+    # Also check repo directory for initial setup
+    if [ ! -f "$proxmox_packages" ] && [ -f "$REPO_ROOT/.config/yadm/packages/proxmox.txt" ]; then
+        proxmox_packages="$REPO_ROOT/.config/yadm/packages/proxmox.txt"
+    fi
+
+    if [ -f "$proxmox_packages" ]; then
+        # Remove comments and empty lines, then install
+        packages=$(grep -v '^#' "$proxmox_packages" | grep -v '^$' | tr '\n' ' ')
+        echo "Installing packages: $packages"
+        sudo apt install -y $packages || echo "Warning: Some packages failed to install"
+
+        # Change default shell to zsh
+        if command -v zsh >/dev/null 2>&1; then
+            current_shell=$(getent passwd "$USER" | cut -d: -f7)
+            zsh_path=$(which zsh)
+            if [ "$current_shell" != "$zsh_path" ]; then
+                echo "Changing default shell to zsh"
+                chsh -s "$zsh_path" || echo "Warning: Failed to change shell to zsh"
+            else
+                echo "Default shell is already zsh"
+            fi
+        else
+            echo "Warning: zsh not found, cannot change default shell"
+        fi
+
+        # Set yadm class for alternate file support
+        echo "Setting yadm class to 'proxmox' for alternate files"
+        yadm config local.class proxmox
+    else
+        echo "Warning: proxmox.txt not found, skipping package installation"
+    fi
 fi
 
-# Node.js setup
-if [ "$os_name" = "macos" ]; then
+# Node.js setup (skip for Proxmox - not needed on servers)
+if [ "$os_name" = "proxmox" ]; then
+    echo "Skipping Node.js setup on Proxmox server"
+elif [ "$os_name" = "macos" ]; then
     # Use nvm on macOS (installed via brew)
     if command -v nvm >/dev/null 2>&1; then
         nvm install --lts
@@ -301,7 +347,7 @@ if [ "$os_name" = "macos" ]; then
         echo "Warning: nvm not found, skipping Node.js LTS installation"
     fi
 else
-    # On Linux, install fnm (Fast Node Manager) as an alternative
+    # On Linux workstations, install fnm (Fast Node Manager)
     if ! command -v fnm >/dev/null 2>&1; then
         echo "Installing fnm (Fast Node Manager)"
         curl -fsSL https://fnm.vercel.app/install | bash

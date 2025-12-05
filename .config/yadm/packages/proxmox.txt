@@ -1,0 +1,18 @@
+# Proxmox server minimal package list
+# Only essential tools for server administration
+
+# Core tools
+git
+zsh
+tmux
+curl
+wget
+
+# CLI utilities
+fzf
+ripgrep
+htop
+tree
+
+# For git-delta pager (optional but nice)
+git-delta

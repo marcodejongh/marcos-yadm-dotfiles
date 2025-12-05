@@ -1,0 +1,58 @@
+# Minimal gitconfig for Proxmox servers
+# Uses SSH for authentication - no credential helpers
+
+[push]
+	default = simple
+	autoSetupRemote = true
+
+[remote]
+	pushDefault = origin
+
+[core]
+	editor = vim
+	pager = delta
+
+[init]
+	defaultBranch = main
+
+[interactive]
+	diffFilter = delta --color-only
+
+[delta]
+	navigate = true
+	dark = true
+
+[color]
+	ui = true
+
+[fetch]
+	prune = true
+	pruneTags = true
+
+[commit]
+	verbose = true
+
+[rerere]
+	enabled = true
+	autoupdate = true
+
+[rebase]
+	autosquash = true
+	autoStash = true
+
+[merge]
+	conflictstyle = zdiff3
+
+[pull]
+	rebase = true
+
+[diff]
+	colorMoved = plain
+	algorithm = histogram
+
+[help]
+	autocorrect = prompt
+
+[alias]
+	conflicted = diff --name-only --diff-filter=U --relative
+	root = rev-parse --show-toplevel
