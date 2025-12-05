@@ -206,11 +206,11 @@ alias rovo="acli rovodev"
 alias grd="git-root"
 
 # bun completions
-[ -s "/Users/mdejongh/.bun/_bun" ] && source "/Users/mdejongh/.bun/_bun"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
 
-[[ -n "$ZSH_VERSION" ]] && source "/Users/mdejongh/.afm-bin-path-manager.zsh"
+[[ -n "$ZSH_VERSION" && -f "$HOME/.afm-bin-path-manager.zsh" ]] && source "$HOME/.afm-bin-path-manager.zsh"
 
-[[ -n "$BASH_VERSION" ]] && source "/Users/mdejongh/.afm-bin-path-manager.bash"
+[[ -n "$BASH_VERSION" && -f "$HOME/.afm-bin-path-manager.bash" ]] && source "$HOME/.afm-bin-path-manager.bash"
