@@ -11,6 +11,14 @@ cd "$HOME"
 
 echo "Install starting..."
 
+# Check if running in non-interactive mode (set by Ansible)
+if [ -n "$YADM_BOOTSTRAP_NONINTERACTIVE" ]; then
+    echo "Running in non-interactive mode..."
+    NONINTERACTIVE=true
+else
+    NONINTERACTIVE=false
+fi
+
 # Platform detection
 system_type=$(uname -s)
 os_name=""
@@ -143,9 +151,11 @@ elif [ "$os_name" = "fedora" ]; then
         else
             echo "Rust already installed"
         fi
-        
-        # Change default shell to zsh
-        if command -v zsh >/dev/null 2>&1; then
+
+        # Change default shell to zsh (skip in non-interactive mode - may prompt for password)
+        if [ "$NONINTERACTIVE" = true ]; then
+            echo "Skipping shell change in non-interactive mode"
+        elif command -v zsh >/dev/null 2>&1; then
             current_shell=$(getent passwd "$USER" | cut -d: -f7)
             zsh_path=$(which zsh)
             if [ "$current_shell" != "$zsh_path" ]; then
@@ -157,7 +167,7 @@ elif [ "$os_name" = "fedora" ]; then
         else
             echo "Warning: zsh not found, cannot change default shell"
         fi
-        
+
         # Install Sunshine if X server is available
         if [ -n "$DISPLAY" ] || command -v X >/dev/null 2>&1 || [ -d "/tmp/.X11-unix" ]; then
             echo "X server detected, installing Sunshine"
@@ -237,9 +247,11 @@ elif [ "$os_name" = "ubuntu" ]; then
         else
             echo "Rust already installed"
         fi
-        
-        # Change default shell to zsh
-        if command -v zsh >/dev/null 2>&1; then
+
+        # Change default shell to zsh (skip in non-interactive mode - may prompt for password)
+        if [ "$NONINTERACTIVE" = true ]; then
+            echo "Skipping shell change in non-interactive mode"
+        elif command -v zsh >/dev/null 2>&1; then
             current_shell=$(getent passwd "$USER" | cut -d: -f7)
             zsh_path=$(which zsh)
             if [ "$current_shell" != "$zsh_path" ]; then
@@ -251,7 +263,7 @@ elif [ "$os_name" = "ubuntu" ]; then
         else
             echo "Warning: zsh not found, cannot change default shell"
         fi
-        
+
         # Install Sunshine if X server is available
         if [ -n "$DISPLAY" ] || command -v X >/dev/null 2>&1 || [ -d "/tmp/.X11-unix" ]; then
             echo "X server detected, installing Sunshine"
@@ -314,8 +326,10 @@ elif [ "$os_name" = "proxmox" ]; then
         echo "Installing packages: $packages"
         sudo apt install -y $packages || echo "Warning: Some packages failed to install"
 
-        # Change default shell to zsh
-        if command -v zsh >/dev/null 2>&1; then
+        # Change default shell to zsh (skip in non-interactive mode - may prompt for password)
+        if [ "$NONINTERACTIVE" = true ]; then
+            echo "Skipping shell change in non-interactive mode"
+        elif command -v zsh >/dev/null 2>&1; then
             current_shell=$(getent passwd "$USER" | cut -d: -f7)
             zsh_path=$(which zsh)
             if [ "$current_shell" != "$zsh_path" ]; then
@@ -399,14 +413,18 @@ if [ "$os_name" = "macos" ]; then
         curl -L -o "$HOME/Library/Fonts/MesloLGS NF Bold Italic.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
     fi
     
-    # Check if 1Password is installed
+    # Check if 1Password is installed (skip in non-interactive mode - requires GUI)
     if [ ! -d "/Applications/1Password.app" ]; then
-        echo "Installing 1password"
-        mkdir -p $HOME/tmp/yadm-bootstrap;
-        cd $HOME/tmp/yadm-bootstrap;
-        curl -L -O https://downloads.1password.com/mac/1Password.zip
-        unzip 1Password.zip
-        open -W 1Password\ Installer.app
+        if [ "$NONINTERACTIVE" = true ]; then
+            echo "Skipping 1Password installation in non-interactive mode (requires GUI)"
+        else
+            echo "Installing 1password"
+            mkdir -p $HOME/tmp/yadm-bootstrap;
+            cd $HOME/tmp/yadm-bootstrap;
+            curl -L -O https://downloads.1password.com/mac/1Password.zip
+            unzip 1Password.zip
+            open -W 1Password\ Installer.app
+        fi
     fi
 elif [ "$os_name" = "fedora" ] || [ "$os_name" = "ubuntu" ]; then
     # Install MesloLGS NF fonts on Linux
