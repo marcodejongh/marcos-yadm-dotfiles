@@ -34,6 +34,22 @@ def mute_color(hex_color, factor=0.3):
     return rgb_to_hex((r, g, b))
 
 
+def create_background_tint(hex_color, factor=0.05):
+    """Create a very subtle background tint from a color
+    This blends the color with the terminal background (assumed dark)"""
+    r, g, b = hex_to_rgb(hex_color)
+    # Create a very subtle tint by blending heavily with dark background
+    # Assuming dark terminal background (around #1e1e1e)
+    bg_r, bg_g, bg_b = 30, 30, 30  # Dark background RGB
+    
+    # Blend the color with background using the factor
+    r = int(bg_r + (r - bg_r) * factor)
+    g = int(bg_g + (g - bg_g) * factor)
+    b = int(bg_b + (b - bg_b) * factor)
+    
+    return rgb_to_hex((r, g, b))
+
+
 def hsl_to_hex(h, s, l):
     """Convert HSL to hex color"""
     # Normalize values
@@ -240,12 +256,15 @@ def normalize_path(directory):
 
 
 def set_tmux_pane_colors(color, worktree_name=None, directory=None):
-    """Set tmux pane border colors and format for current session only"""
+    """Set tmux pane border colors, background tints, and format for current session only"""
     # Set colors based on peacock color or defaults
     if color:
         # Mute the color for subtle borders
         muted_color = mute_color(color, 0.6)
         bright_color = mute_color(color, 0.8)
+        
+        # Create a very subtle background tint
+        bg_tint = create_background_tint(color, 0.08)  # Very subtle tint
         
         # Set inactive pane border to muted color (session-specific)
         subprocess.run(['tmux', 'set-option', 'pane-border-style', f'fg={muted_color}'], 
@@ -254,11 +273,24 @@ def set_tmux_pane_colors(color, worktree_name=None, directory=None):
         # Set active pane border to brighter version of the color (session-specific)
         subprocess.run(['tmux', 'set-option', 'pane-active-border-style', f'fg={bright_color}'], 
                       capture_output=True)
+        
+        # Set window styles - subtle background for inactive panes, default for active
+        # This gives inactive panes a subtle colored background tint
+        subprocess.run(['tmux', 'set-option', 'window-style', f'bg={bg_tint}'], 
+                      capture_output=True)
+        # Active window keeps default (transparent) background
+        subprocess.run(['tmux', 'set-option', 'window-active-style', 'bg=default'], 
+                      capture_output=True)
     else:
         # Use default colors when no peacock color
         subprocess.run(['tmux', 'set-option', 'pane-border-style', 'fg=colour240'], 
                       capture_output=True)
         subprocess.run(['tmux', 'set-option', 'pane-active-border-style', 'fg=colour250'], 
+                      capture_output=True)
+        # Reset window styles to defaults
+        subprocess.run(['tmux', 'set-option', 'window-style', 'bg=default'], 
+                      capture_output=True)
+        subprocess.run(['tmux', 'set-option', 'window-active-style', 'bg=default'], 
                       capture_output=True)
         bright_color = 'colour250'  # Use default bright color for text
     
