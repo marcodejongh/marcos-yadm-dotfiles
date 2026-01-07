@@ -19,18 +19,26 @@
 # Global variables to track current repository bin path and cache git root
 typeset -g _current_repo_bin=""
 typeset -g _cached_git_root=""
+typeset -g _cached_git_pwd=""
 
 # Function to manage repository bin directory in PATH
 _manage_repo_bin_path() {
     emulate -L zsh
     
-    # Cache git root check to avoid repeated git calls
+    # Enhanced caching: only call git if we've actually changed directories
     local git_root
-    if [[ -n "$_cached_git_root" ]] && [[ "$PWD" == "$_cached_git_root"* ]]; then
+    if [[ "$PWD" == "$_cached_git_pwd" ]]; then
+        # Same directory, use cached value
         git_root="$_cached_git_root"
+    elif [[ -n "$_cached_git_root" ]] && [[ "$PWD" == "$_cached_git_root"* ]]; then
+        # Still within the same git repo
+        git_root="$_cached_git_root"
+        _cached_git_pwd="$PWD"
     else
+        # New location, need to check git
         git_root=$(git rev-parse --show-toplevel 2>/dev/null)
         _cached_git_root="$git_root"
+        _cached_git_pwd="$PWD"
     fi
     
     local new_bin_path=""

@@ -20,6 +20,36 @@ if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
   source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 fi
 
+# Fast git checkout using fzf with recent branches from reflog
+gcb() {
+  local branch
+  branch=$(git reflog 2>/dev/null |
+    grep 'checkout: moving from' |
+    sed 's/.*checkout: moving from .* to \(.*\)/\1/' |
+    awk '!seen[$0]++' |
+    head -30 |
+    fzf --height 40% --reverse --prompt="Checkout branch: ")
+
+  if [[ -n "$branch" ]]; then
+    git checkout "$branch"
+  fi
+}
+
+# Override Prezto's __git_branch_names to only show recent branches from reflog
+# This affects all git commands that complete branch names
+__git_branch_names() {
+  local expl
+  declare -a branch_names
+
+  branch_names=(${(f)"$(git reflog 2>/dev/null |
+    grep 'checkout: moving from' |
+    sed 's/.*checkout: moving from .* to \(.*\)/\1/' |
+    awk '!seen[$0]++' |
+    head -30)"})
+
+  _wanted branch-names expl 'recent branch' compadd -a - branch_names
+}
+
 # Platform-aware completion setup
 if [[ "$OSTYPE" == "darwin"* ]]; then
   # macOS with Homebrew
@@ -54,29 +84,34 @@ alias sa='alias | fzf'
 # zle -N sa
 # bindkey '^s' sa
 
+# Disable gitstatusd for AFM directories (prevents git index lock contention)
+POWERLEVEL9K_VCS_DISABLED_WORKDIR_PATTERN='*/atlassian/afm/*'
+
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 export TMUX_PLUGINS_PATH=~/.tmux/plugins
 
-tmux-window-name() {
-	# Only run if we're in a tmux session, plugin exists, and we're in work directories
-	if [[ -n "$TMUX" ]] && [ -f "$TMUX_PLUGINS_PATH/tmux-window-name/scripts/rename_session_windows.py" ] && [[ "$PWD" == */Projects/* ]]; then
-		($TMUX_PLUGINS_PATH/tmux-window-name/scripts/rename_session_windows.py &)
-	fi
-}
+# Disabled tmux hooks for performance - uncomment if needed
+# tmux-window-name() {
+# 	# Only run if we're in a tmux session, plugin exists, and we're in work directories
+# 	if [[ -n "$TMUX" ]] && [ -f "$TMUX_PLUGINS_PATH/tmux-window-name/scripts/rename_session_windows.py" ] && [[ "$PWD" == */Projects/* ]]; then
+# 		($TMUX_PLUGINS_PATH/tmux-window-name/scripts/rename_session_windows.py &)
+# 	fi
+# }
 
-tmux-peacock-update() {
-	# Sync tmux pane colors with VSCode Peacock colors
-	# Only run in large repos to reduce overhead
-	if [[ -n "$TMUX" ]] && [[ -x "~/bin/tmux-peacock-sync" ]] && [[ "$PWD" == */atlassian/* ]]; then
-		# Run the script directly without killing processes
-		~/bin/tmux-peacock-sync "$PWD" 2>/dev/null
-	fi
-}
+# tmux-peacock-update() {
+# 	# Sync tmux pane colors with VSCode Peacock colors
+# 	# Only run in large repos to reduce overhead
+# 	if [[ -n "$TMUX" ]] && [[ -x "~/bin/tmux-peacock-sync" ]] && [[ "$PWD" == */atlassian/* ]]; then
+# 		# Run the script directly without killing processes
+# 		~/bin/tmux-peacock-sync "$PWD" 2>/dev/null
+# 	fi
+# }
 
-add-zsh-hook chpwd tmux-window-name
-add-zsh-hook chpwd tmux-peacock-update
+# Hooks disabled for performance - uncomment to re-enable
+# add-zsh-hook chpwd tmux-window-name
+# add-zsh-hook chpwd tmux-peacock-update
 
 # Python environment
 export PATH="${HOME}/.pyenv/shims:${PATH}"
@@ -86,16 +121,6 @@ export PATH="${HOME}/.pyenv/shims:${PATH}"
 
 alias editmydotfiles='code $(yadm ls-tree --name-only --full-tree -r HEAD)'
 
-# Platform-specific SSH agent setup
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  # macOS - 1Password SSH agent
-  export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
-else
-  # Linux - use system SSH agent or gpg-agent
-  if pgrep -x "gpg-agent" > /dev/null; then
-    export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
-  fi
-fi
 
 # Consolidate PATH management to prevent duplicates
 _add_to_path() {
@@ -218,15 +243,3 @@ export BUN_INSTALL="$HOME/.bun"
 [[ -n "$ZSH_VERSION" && -f "$HOME/.afm-bin-path-manager.zsh" ]] && source "$HOME/.afm-bin-path-manager.zsh"
 
 [[ -n "$BASH_VERSION" && -f "$HOME/.afm-bin-path-manager.bash" ]] && source "$HOME/.afm-bin-path-manager.bash"
-
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
