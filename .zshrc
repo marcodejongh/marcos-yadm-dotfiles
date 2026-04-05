@@ -203,9 +203,30 @@ alias grd="git-root"
 # bun completions
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
+# Android SDK
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export ANDROID_SDK_ROOT="$HOME/Library/Android/sdk"
+export PATH="$PATH:$ANDROID_HOME/emulator"
+export PATH="$PATH:$ANDROID_HOME/platform-tools"
+export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin"
+export JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home"
+export PATH="$PATH:$JAVA_HOME/bin"
+
 # bun
 export BUN_INSTALL="$HOME/.bun"
 
 [[ -n "$ZSH_VERSION" && -f "$HOME/.afm-bin-path-manager.zsh" ]] && source "$HOME/.afm-bin-path-manager.zsh"
 
 [[ -n "$BASH_VERSION" && -f "$HOME/.afm-bin-path-manager.bash" ]] && source "$HOME/.afm-bin-path-manager.bash"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
