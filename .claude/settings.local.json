@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Read(//private/tmp/**)",
+      "Bash(tmux new-session:*)",
+      "Bash(tmux list-sessions:*)"
+    ]
+  }
+}
