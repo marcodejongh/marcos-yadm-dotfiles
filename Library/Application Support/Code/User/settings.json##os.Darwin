@@ -58,9 +58,6 @@
   },
   "typescript.format.enable": false,
   "typescript.tsserver.web.projectWideIntellisense.enabled": false,
-  "yaml.schemas": {
-    "file:///Users/mdejongh/.vscode/extensions/atlassian.atlascode-3.8.18/resources/schemas/pipelines-schema.json": "bitbucket-pipelines.yml"
-  },
   "git.blame.editorDecoration.enabled": true,
   "[dockercompose]": {
     "editor.insertSpaces": true,
@@ -70,5 +67,7 @@
   },
   "[github-actions-workflow]": {
     "editor.defaultFormatter": "redhat.vscode-yaml"
-  }
+  },
+  "atlascode.rovodev.showEntitlementNotifications": false,
+  "atlascode.bitbucket.pipelines.monitorEnabled": false
 }

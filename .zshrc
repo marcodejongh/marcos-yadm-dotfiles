@@ -222,7 +222,7 @@ gWs() {
     [[ -n "$wt" ]] && cd "$wt"
 }
 
-alias rovo="acli rovodev"
+alias rovo="acli rovodev tui"
 alias grd="git-root"
 
 # bun completions
@@ -237,9 +237,9 @@ export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin"
 export JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home"
 export PATH="$PATH:$JAVA_HOME/bin"
 
-# bun
-export BUN_INSTALL="$HOME/.bun"
-
 [[ -n "$ZSH_VERSION" && -f "$HOME/.afm-bin-path-manager.zsh" ]] && source "$HOME/.afm-bin-path-manager.zsh"
 
 [[ -n "$BASH_VERSION" && -f "$HOME/.afm-bin-path-manager.bash" ]] && source "$HOME/.afm-bin-path-manager.bash"
+
+# git-doctor: shell environment configuration
+[ -f "$HOME/.git-doctor/env.sh" ] && source "$HOME/.git-doctor/env.sh"

@@ -13,7 +13,7 @@
 	pager = less
 	excludesfile = /Users/mdejongh/.gitignore_global
 	# Performance optimizations for large repositories
-	fsmonitor = true
+	fsmonitor = false
 	untrackedcache = true
 	commitgraph = true
 	multipackindex = true
@@ -120,30 +120,6 @@
 	# Update commit graph on fetch
 	writeCommitGraph = true
 	parallel = 10
-[maintenance]
-	repo = /Users/mdejongh/Projects/atlassian/afm-shallow/.bare
-	repo = /Users/mdejongh/Projects/atlassian/afm/afm-bin-autoswitching
-	repo = /Users/mdejongh/Projects/atlassian/afm/isl
-	repo = /Users/mdejongh/Projects/atlassian/afm/master
-	repo = /Users/mdejongh/Projects/atlassian/spr_rebase_fix
-	repo = /Users/mdejongh/Projects/atlassian/afm/add-spr-commit-amend
-	repo = /Users/mdejongh/Projects/atlassian/afm/afm-install
-	repo = /Users/mdejongh/Projects/atlassian/afm/editor-tests-aid
-	repo = /Users/mdejongh/Projects/atlassian/afm/perf-test
-	repo = /Users/mdejongh/Projects/atlassian/afm/perf-test-without-workers
-	repo = /Users/mdejongh/Projects/atlassian/afm/perf-test-without-ten-workers
-	repo = /Users/mdejongh/Projects/atlassian/afm/perf-test-with-10worker-manyfiles
-	repo = /Users/mdejongh/Projects/atlassian/afm/unbarrel
-	repo = /Users/mdejongh/Projects/atlassian/afm/cleanup
-	repo = /Users/mdejongh/Projects/atlassian/afm/spr-clone
-	repo = /Users/mdejongh/Projects/atlassian/afm/vibes
-	repo = /Users/mdejongh/Projects/atlassian/afm/ai-all-tests
-	repo = /Users/mdejongh/Projects/atlassian/afm/test-depth
-	repo = /Users/mdejongh/Projects/atlassian/afm/master-new
-	repo = /Users/mdejongh/Projects/atlassian/spike_nx
-	repo = /Users/mdejongh/Projects/atlassian/afm/ai-all-tests/test-worktree
-	repo = /Users/mdejongh/Projects/atlassian/afm/ff_form_ci
-	repo = /Users/mdejongh/Projects/atlassian/spr_branch_imp
 [checkout]
 	workers = 10
 [protocol]
@@ -151,5 +127,15 @@
 [advice]
 	skippedCherryPicks = false
 [afm]
-	binPathManagerScriptHash = a13ba0149280b73afe5edb10bdc39da8b24aa7f3
-	binPathManagerScriptTimestamp = 1762229234
+	binPathManagerScriptHash = 2064e7dbecb4f6f491309b244c13954c265d56ff
+	binPathManagerScriptTimestamp = 1763078148
+[ag]
+[credential "https://bitbucket.org"]
+	helper = 
+	helper = !ag-credential-helper
+[url "https://bitbucket.org/"]
+	insteadOf = git@bitbucket.org:
+[isl]
+	render-compact = false
+	show-diff-number = true
+	changedFilesDisplayType = \"short\"

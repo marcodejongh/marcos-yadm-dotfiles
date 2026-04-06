@@ -82,3 +82,4 @@ fi
 
 #source "$HOME/.rye/env"
 
+if [ -f "$HOME/.afm-bin-path-manager.zsh" ]; then source "$HOME/.afm-bin-path-manager.zsh"; fi
