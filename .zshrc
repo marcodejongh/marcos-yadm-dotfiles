@@ -167,6 +167,10 @@ _git_main_or_master_branch() {
     fi
 }
 
+# Replace Prezto git aliases with branch-aware helpers below.
+unalias gfm 2>/dev/null
+unalias gri 2>/dev/null
+
 gfm() {
     local branch
 
