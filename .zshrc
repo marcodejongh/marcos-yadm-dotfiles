@@ -141,7 +141,30 @@ movToGif() {
 }
 
 alias checkCrowdstrike='sudo fs_usage $(ps -A | grep com.crowdstrike.falcon.Agent | awk "{print $1}" | head -1)'
-alias gfm="git fetch origin master --prune --prune-tags"
+gfm() {
+    local branch
+
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        echo "gfm: not inside a git repository" >&2
+        return 1
+    fi
+
+    branch=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null)
+    branch="${branch#origin/}"
+
+    if [[ "$branch" != "main" && "$branch" != "master" ]]; then
+        if git show-ref --verify --quiet refs/remotes/origin/main || git show-ref --verify --quiet refs/heads/main; then
+            branch="main"
+        elif git show-ref --verify --quiet refs/remotes/origin/master || git show-ref --verify --quiet refs/heads/master; then
+            branch="master"
+        else
+            echo "gfm: couldn't determine whether this repo uses main or master" >&2
+            return 1
+        fi
+    fi
+
+    git pull origin "$branch"
+}
 alias af="cd ~/Projects/atlassian/atlassian-frontend/master"
 alias cf="cd ~/Projects/atlassian/confluence-frontend/"
 alias jf="cd ~/Projects/atlassian/jira-frontend/"
