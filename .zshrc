@@ -141,29 +141,49 @@ movToGif() {
 }
 
 alias checkCrowdstrike='sudo fs_usage $(ps -A | grep com.crowdstrike.falcon.Agent | awk "{print $1}" | head -1)'
-gfm() {
+_git_main_or_master_branch() {
     local branch
 
     if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        echo "gfm: not inside a git repository" >&2
+        echo "not inside a git repository" >&2
         return 1
     fi
 
     branch=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null)
     branch="${branch#origin/}"
 
-    if [[ "$branch" != "main" && "$branch" != "master" ]]; then
-        if git show-ref --verify --quiet refs/remotes/origin/main || git show-ref --verify --quiet refs/heads/main; then
-            branch="main"
-        elif git show-ref --verify --quiet refs/remotes/origin/master || git show-ref --verify --quiet refs/heads/master; then
-            branch="master"
-        else
-            echo "gfm: couldn't determine whether this repo uses main or master" >&2
-            return 1
-        fi
+    if [[ "$branch" == "main" || "$branch" == "master" ]]; then
+        printf '%s\n' "$branch"
+        return 0
     fi
 
+    if git show-ref --verify --quiet refs/remotes/origin/main || git show-ref --verify --quiet refs/heads/main; then
+        printf 'main\n'
+    elif git show-ref --verify --quiet refs/remotes/origin/master || git show-ref --verify --quiet refs/heads/master; then
+        printf 'master\n'
+    else
+        echo "couldn't determine whether this repo uses main or master" >&2
+        return 1
+    fi
+}
+
+gfm() {
+    local branch
+
+    branch=$(_git_main_or_master_branch) || return 1
     git pull origin "$branch"
+}
+
+gri() {
+    if [[ -n "$1" ]]; then
+        git rebase --interactive "$1"
+        return
+    fi
+
+    local branch
+
+    branch=$(_git_main_or_master_branch) || return 1
+    git rebase --interactive "origin/$branch"
 }
 alias af="cd ~/Projects/atlassian/atlassian-frontend/master"
 alias cf="cd ~/Projects/atlassian/confluence-frontend/"
