@@ -409,6 +409,43 @@ if [ "$os_name" = "macos" ]; then
         open -W 1Password\ Installer.app
     fi
 elif [ "$os_name" = "fedora" ] || [ "$os_name" = "ubuntu" ]; then
+    # Install 1Password desktop app and CLI on Linux
+    if [ "$os_name" = "fedora" ]; then
+        if ! command -v 1password >/dev/null 2>&1 || ! rpm -qa | grep -q 1password; then
+            echo "Installing 1Password desktop app"
+            sudo rpm --import https://downloads.1password.com/linux/keys/1password.asc
+            sudo sh -c 'cat > /etc/yum.repos.d/1password.repo << REPOEOF
+[1password]
+name=1Password Stable Channel
+baseurl=https://downloads.1password.com/linux/rpm/stable/\$basearch
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://downloads.1password.com/linux/keys/1password.asc
+REPOEOF'
+            sudo dnf install -y 1password || echo "Warning: Failed to install 1Password"
+        else
+            echo "1Password desktop app already installed"
+        fi
+
+        if ! command -v op >/dev/null 2>&1; then
+            echo "Installing 1Password CLI"
+            sudo rpm --import https://downloads.1password.com/linux/keys/1password.asc
+            sudo sh -c 'cat > /etc/yum.repos.d/1password-cli.repo << REPOEOF
+[1password-cli]
+name=1Password CLI Stable Channel
+baseurl=https://downloads.1password.com/linux/rpm/stable/\$basearch
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://downloads.1password.com/linux/keys/1password.asc
+REPOEOF'
+            sudo dnf install -y 1password-cli || echo "Warning: Failed to install 1Password CLI"
+        else
+            echo "1Password CLI already installed"
+        fi
+    fi
+
     # Install MesloLGS NF fonts on Linux
     font_dir="$HOME/.local/share/fonts"
     mkdir -p "$font_dir"
