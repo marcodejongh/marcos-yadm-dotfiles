@@ -4,6 +4,7 @@
       "Read"
     ]
   },
+  "model": "sonnet",
   "hooks": {
     "SessionStart": [
       {
@@ -31,6 +32,26 @@
           {
             "type": "command",
             "command": "[ -n \"$TMUX\" ] && tmux select-pane -t \"$TMUX_PANE\" -T \"claude: $(basename $PWD)\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"$TMUX\" ] && tmux select-pane -t \"$TMUX_PANE\" -T \"🔔 claude: $(basename $PWD)\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"$TMUX\" ] && tmux select-pane -t \"$TMUX_PANE\" -T \"claude [working]: $(basename $PWD)\" 2>/dev/null || true"
           }
         ]
       }
