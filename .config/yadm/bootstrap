@@ -495,3 +495,6 @@ if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
 else
     echo "Tmux plugin manager already installed"
 fi
+
+echo "Installing tmux plugins"
+~/.tmux/plugins/tpm/bin/install_plugins
