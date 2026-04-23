@@ -5,7 +5,11 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "Read(//private/tmp/**)",
       "Bash(tmux new-session:*)",
-      "Bash(tmux list-sessions:*)"
+      "Bash(tmux list-sessions:*)",
+      "Bash(yadm ls-files *)",
+      "WebFetch(domain:github.com)",
+      "Bash(python3 -c \"import filelock\")",
+      "Bash(~/.tmux/plugins/tpm/bin/install_plugins *)"
     ]
   }
 }
