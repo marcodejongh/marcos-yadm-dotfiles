@@ -290,3 +290,16 @@ export PATH="$PATH:$JAVA_HOME/bin"
 
 # git-doctor: shell environment configuration
 [ -f "$HOME/.git-doctor/env.sh" ] && source "$HOME/.git-doctor/env.sh"
+
+# fnm
+FNM_PATH="/home/developer/.local/share/fnm"
+if [ -d "$FNM_PATH" ]; then
+  export PATH="$FNM_PATH:$PATH"
+  eval "$(fnm env --shell zsh)"
+fi
+
+# Vite+ bin (https://viteplus.dev)
+. "$HOME/.vite-plus/env"
+[ -f ~/.claude_env ] && source ~/.claude_env
+export PATH="$HOME/.bun/bin:$PATH"
+[ -z "$TMUX" ] && [ -n "$SSH_CONNECTION" ] && [ -t 0 ] && exec tmux new-session -A -s main
