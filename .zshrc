@@ -296,3 +296,7 @@ export PATH="$PATH:$JAVA_HOME/bin"
 [ -f ~/.claude_env ] && source ~/.claude_env
 export PATH="$HOME/.bun/bin:$PATH"
 [ -z "$TMUX" ] && [ -n "$SSH_CONNECTION" ] && [ -t 0 ] && exec tmux new-session -A -s main
+
+# Added by Antigravity
+export PATH="/Users/marcodejongh/.antigravity/antigravity/bin:$PATH"
+
