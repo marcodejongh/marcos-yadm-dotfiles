@@ -4,7 +4,6 @@
       "Read"
     ]
   },
-  "model": "sonnet",
   "hooks": {
     "SessionStart": [
       {
@@ -65,6 +64,7 @@
   },
   "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true,
   "theme": "dark",
   "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true

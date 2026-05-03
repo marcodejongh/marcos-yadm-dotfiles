@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Print a tmux style string ("bg=...,fg=...") for the current host,
+# looked up from ~/.config/tmux/host-colors.conf.
+set -euo pipefail
+
+CONFIG="${TMUX_HOST_COLORS:-$HOME/.config/tmux/host-colors.conf}"
+HOST="$(hostname -s 2>/dev/null || hostname)"
+
+lookup() {
+  awk -v key="$1" '
+    /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+    $1 == key { print $2, $3; exit }
+  ' "$CONFIG" 2>/dev/null
+}
+
+bg=""; fg=""
+if [[ -r "$CONFIG" ]]; then
+  read -r bg fg <<< "$(lookup "$HOST")"
+  if [[ -z "${bg:-}" ]]; then
+    read -r bg fg <<< "$(lookup default)"
+  fi
+fi
+: "${bg:=colour235}"
+: "${fg:=colour250}"
+
+printf 'bg=%s,fg=%s' "$bg" "$fg"
