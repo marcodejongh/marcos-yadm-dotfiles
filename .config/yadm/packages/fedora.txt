@@ -16,6 +16,7 @@ nodejs
 npm
 java-latest-openjdk
 java-latest-openjdk-devel
+postgresql
 
 # CLI utilities
 ripgrep
