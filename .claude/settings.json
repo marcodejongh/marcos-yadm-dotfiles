@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Read"
-    ]
+    ],
+    "defaultMode": "auto"
   },
   "hooks": {
     "SessionStart": [
@@ -67,5 +68,6 @@
   "skipAutoPermissionPrompt": true,
   "theme": "dark",
   "remoteControlAtStartup": true,
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true
 }
