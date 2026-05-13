@@ -589,8 +589,8 @@
             "versioned_id": "macos-avcapture",
             "settings": {
                 "device_name": "Elgato HD60 X",
-                "device": "0x22000000fd9008a",
-                "preset": "AVCaptureSessionPresetHigh"
+                "device": "0x213200000fd9008a",
+                "preset": "AVCaptureSessionPreset1920x1080"
             },
             "mixers": 255,
             "sync": 0,
@@ -2359,8 +2359,8 @@
             "name": "HOT Livestream"
         }
     ],
-    "current_scene": "Fuji full",
-    "current_program_scene": "Fuji full",
+    "current_scene": "FUJI2 FULL",
+    "current_program_scene": "FUJI2 FULL",
     "canvases": [],
     "current_transition": "Fade",
     "transition_duration": 300,
