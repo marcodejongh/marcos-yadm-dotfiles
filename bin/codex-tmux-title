@@ -1,0 +1,198 @@
+#!/usr/bin/env bash
+set -u
+
+if [[ -z "${TMUX:-}" || -z "${TMUX_PANE:-}" ]]; then
+  exit 0
+fi
+
+state="${1:-idle}"
+title_action="${2:-use-cache}"
+codex_home="${CODEX_HOME:-$HOME/.codex}"
+title_cache_dir="$codex_home/tmux-title-cache"
+title_model="${CODEX_TMUX_TITLE_MODEL:-gpt-5.3-codex-spark}"
+title_timeout="${CODEX_TMUX_TITLE_TIMEOUT:-45s}"
+
+sql_escape() {
+  printf "%s" "$1" | sed "s/'/''/g"
+}
+
+normalize_title() {
+  tr '\n\r\t' '   ' | sed -E 's/[[:space:]]+/ /g; s/^ //; s/ $//'
+}
+
+safe_cache_key() {
+  tr -cd '[:alnum:]._-' | sed -E 's/^$/unknown/'
+}
+
+brief_session_title() {
+  awk '
+    BEGIN {
+      max_words = 4
+      max_len = 30
+      split("a an and are as at be but by can could did do does for from has have if in into is it its let lets make need now of on or our please set sets should so that the their this to use using want we with would you your appropiate appropriate", stop_words)
+      for (i in stop_words) stop[stop_words[i]] = 1
+    }
+
+    {
+      gsub(/[^[:alnum:]#+.-]+/, " ")
+      for (i = 1; i <= NF; i++) {
+        word = $i
+        gsub(/^[^[:alnum:]]+|[^[:alnum:]]+$/, "", word)
+        lower = tolower(word)
+
+        if (lower == "" || stop[lower]) continue
+        if (length(lower) <= 2 && word !~ /^[A-Z0-9]{2,}$/) continue
+
+        word = format_word(word)
+        candidate = out == "" ? word : out " " word
+
+        if (word_count >= 2 && length(candidate) > max_len) break
+        if (word_count > 0 && length(candidate) > max_len) break
+        if (word_count == 0 && length(candidate) > max_len) {
+          candidate = substr(candidate, 1, max_len)
+        }
+
+        out = candidate
+        word_count++
+        if (word_count >= max_words) break
+      }
+    }
+
+    END {
+      print out == "" ? "New Task" : out
+    }
+
+    function format_word(word, lower) {
+      if (word ~ /^[A-Z0-9#+.-]+$/) return word
+      lower = tolower(word)
+      return toupper(substr(lower, 1, 1)) substr(lower, 2)
+    }
+  '
+}
+
+apply_tmux_title() {
+  local state="$1"
+  local title_base="$2"
+  local title
+  local window_target
+  local pane_border_format
+
+  case "$state" in
+    working)
+      title="codex [working]: $title_base"
+      ;;
+    attention)
+      title="🔔 codex: $title_base"
+      ;;
+    idle|*)
+      title="codex: $title_base"
+      ;;
+  esac
+
+  tmux select-pane -t "$TMUX_PANE" -T "$title" 2>/dev/null || true
+  tmux set-option -p -t "$TMUX_PANE" @codex_title "$title" 2>/dev/null || true
+
+  pane_border_format=" #{?#{!=:#{@codex_title},},#{@codex_title},#($HOME/.tmux/plugins/tmux-peacock/scripts/pane-title-colored.py '#{q:pane_current_path}')} "
+  tmux set-option -g pane-border-format "$pane_border_format" 2>/dev/null || true
+
+  window_target="$(tmux display-message -p -t "$TMUX_PANE" '#{session_name}:#{window_index}' 2>/dev/null || true)"
+  if [[ -n "$window_target" ]]; then
+    tmux rename-window -t "$window_target" "$title" 2>/dev/null || true
+  fi
+}
+
+codex_session_source() {
+  local db="$HOME/.codex/state_5.sqlite"
+  local thread_id_escaped
+  local cwd_escaped
+
+  [[ -r "$db" ]] || return 1
+  command -v sqlite3 >/dev/null 2>&1 || return 1
+
+  if [[ -n "${CODEX_THREAD_ID:-}" ]]; then
+    thread_id_escaped="$(sql_escape "$CODEX_THREAD_ID")"
+    sqlite3 -noheader -batch "$db" \
+      "SELECT COALESCE(NULLIF(title, ''), NULLIF(first_user_message, '')) FROM threads WHERE id = '$thread_id_escaped' LIMIT 1;" \
+      2>/dev/null | normalize_title
+    return
+  fi
+
+  cwd_escaped="$(sql_escape "$PWD")"
+  sqlite3 -noheader -batch "$db" \
+    "SELECT COALESCE(NULLIF(title, ''), NULLIF(first_user_message, '')) FROM threads WHERE cwd = '$cwd_escaped' ORDER BY COALESCE(updated_at_ms, updated_at * 1000) DESC LIMIT 1;" \
+    2>/dev/null | normalize_title
+}
+
+generate_title_with_codex() {
+  local source="$1"
+  local output_file="$2"
+  local tmp_file="$output_file.tmp.$$"
+  local raw_file="$output_file.raw.$$"
+  local prompt
+  local generated
+
+  command -v codex >/dev/null 2>&1 || return 1
+  command -v timeout >/dev/null 2>&1 || return 1
+
+  prompt="$(printf '%s\n\n%s\n\nTask: "%s"\n\n%s\n' \
+    "Generate a concise tmux window title for this coding task." \
+    "Rules: 2-4 words, under 30 characters, normal spacing, no quotes, no punctuation, no markdown, no explanation." \
+    "$source" \
+    "Respond with only the title.")"
+
+  timeout "$title_timeout" codex exec \
+    --ignore-user-config \
+    --ignore-rules \
+    --ephemeral \
+    -m "$title_model" \
+    -c model_reasoning_effort=low \
+    -o "$raw_file" \
+    "$prompt" \
+    </dev/null >/dev/null 2>&1 || return 1
+
+  [[ -s "$raw_file" ]] || return 1
+  generated="$(normalize_title < "$raw_file" | brief_session_title)"
+  rm -f "$raw_file"
+
+  [[ -n "$generated" ]] || return 1
+  printf "%s\n" "$generated" > "$tmp_file"
+  mv "$tmp_file" "$output_file"
+}
+
+ensure_generated_title() {
+  local cache_key="$1"
+  local source="$2"
+  local cache_file="$title_cache_dir/$cache_key.title"
+  local lock_dir="$title_cache_dir/$cache_key.lock"
+
+  [[ "$title_action" == "generate" ]] || return 0
+  [[ -n "$source" ]] || return 0
+  [[ -s "$cache_file" ]] && return 0
+
+  mkdir -p "$title_cache_dir" 2>/dev/null || return 0
+  if [[ -d "$lock_dir" && ! -s "$cache_file" ]]; then
+    rmdir "$lock_dir" 2>/dev/null || return 0
+  fi
+  mkdir "$lock_dir" 2>/dev/null || return 0
+
+  generate_title_with_codex "$source" "$cache_file" || true
+  rmdir "$lock_dir" 2>/dev/null || true
+}
+
+source_title="$(codex_session_source)"
+cache_key="$(printf "%s" "${CODEX_THREAD_ID:-cwd-$PWD}" | safe_cache_key)"
+cache_file="$title_cache_dir/$cache_key.title"
+
+ensure_generated_title "$cache_key" "$source_title"
+
+if [[ -s "$cache_file" ]]; then
+  title_base="$(normalize_title < "$cache_file" | brief_session_title)"
+else
+  title_base="$(printf "%s" "$source_title" | brief_session_title)"
+fi
+
+if [[ -z "$title_base" || "$title_base" == "New Task" ]]; then
+  title_base="$("$HOME/bin/tmux-pane-title" "$PWD" 2>/dev/null || basename "$PWD")"
+fi
+
+apply_tmux_title "$state" "$title_base"
