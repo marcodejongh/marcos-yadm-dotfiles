@@ -11,7 +11,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -n \"$TMUX\" ] && tmux select-pane -t \"$TMUX_PANE\" -T \"claude: $(basename $PWD)\" 2>/dev/null || true"
+            "command": "/home/developer/bin/claude-tmux-title idle",
+            "timeout": 10
           }
         ]
       }
@@ -21,7 +22,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -n \"$TMUX\" ] && tmux select-pane -t \"$TMUX_PANE\" -T \"claude [working]: $(basename $PWD)\" 2>/dev/null || true"
+            "command": "/home/developer/bin/claude-tmux-title working generate",
+            "timeout": 60
           }
         ]
       }
@@ -31,7 +33,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -n \"$TMUX\" ] && tmux select-pane -t \"$TMUX_PANE\" -T \"claude: $(basename $PWD)\" 2>/dev/null || true"
+            "command": "/home/developer/bin/claude-tmux-title idle",
+            "timeout": 10
           }
         ]
       }
@@ -41,7 +44,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -n \"$TMUX\" ] && tmux select-pane -t \"$TMUX_PANE\" -T \"🔔 claude: $(basename $PWD)\" 2>/dev/null || true"
+            "command": "/home/developer/bin/claude-tmux-title attention",
+            "timeout": 10
           }
         ]
       }
@@ -51,7 +55,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -n \"$TMUX\" ] && tmux select-pane -t \"$TMUX_PANE\" -T \"claude [working]: $(basename $PWD)\" 2>/dev/null || true"
+            "command": "/home/developer/bin/claude-tmux-title working",
+            "timeout": 10
           }
         ]
       }
@@ -65,7 +70,6 @@
   },
   "effortLevel": "xhigh",
   "skipDangerousModePermissionPrompt": true,
-  "skipAutoPermissionPrompt": true,
   "theme": "dark",
   "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true,

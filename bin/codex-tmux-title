@@ -70,10 +70,38 @@ brief_session_title() {
   '
 }
 
+workspace_window_title() {
+  local cwd="$1"
+  local root
+  local base
+
+  [[ -n "$cwd" ]] || cwd="$PWD"
+
+  if command -v git >/dev/null 2>&1; then
+    root="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || true)"
+  fi
+
+  [[ -n "${root:-}" ]] || root="$cwd"
+  if [[ "${root%/}" == "${HOME%/}" ]]; then
+    printf "~\n"
+    return
+  fi
+
+  base="$(basename "$root")"
+
+  if [[ "$base" == .* ]]; then
+    base="$(basename "$(dirname "$root")")"
+  fi
+
+  [[ -n "$base" && "$base" != "/" ]] || base="workspace"
+  printf "%s\n" "$base"
+}
+
 apply_tmux_title() {
   local state="$1"
   local title_base="$2"
   local title
+  local window_title
   local window_target
   local pane_border_format
 
@@ -90,14 +118,16 @@ apply_tmux_title() {
   esac
 
   tmux select-pane -t "$TMUX_PANE" -T "$title" 2>/dev/null || true
+  tmux set-option -p -t "$TMUX_PANE" @agent_title "$title" 2>/dev/null || true
   tmux set-option -p -t "$TMUX_PANE" @codex_title "$title" 2>/dev/null || true
 
-  pane_border_format=" #{?#{!=:#{@codex_title},},#{@codex_title},#($HOME/.tmux/plugins/tmux-peacock/scripts/pane-title-colored.py '#{q:pane_current_path}')} "
+  pane_border_format=" #{?#{!=:#{@agent_title},},#{@agent_title},#{?#{!=:#{@codex_title},},#{@codex_title},#{?#{!=:#{@claude_title},},#{@claude_title},#($HOME/.tmux/plugins/tmux-peacock/scripts/pane-title-colored.py '#{q:pane_current_path}')}}} "
   tmux set-option -g pane-border-format "$pane_border_format" 2>/dev/null || true
 
   window_target="$(tmux display-message -p -t "$TMUX_PANE" '#{session_name}:#{window_index}' 2>/dev/null || true)"
   if [[ -n "$window_target" ]]; then
-    tmux rename-window -t "$window_target" "$title" 2>/dev/null || true
+    window_title="$(workspace_window_title "$PWD")"
+    tmux rename-window -t "$window_target" "$window_title" 2>/dev/null || true
   fi
 }
 

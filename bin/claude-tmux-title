@@ -1,0 +1,392 @@
+#!/usr/bin/env bash
+set -u
+
+if [[ "${CLAUDE_TMUX_TITLE_CHILD:-}" == "1" ]]; then
+  exit 0
+fi
+
+if [[ -t 0 ]]; then
+  hook_input=""
+else
+  hook_input="$(cat 2>/dev/null || true)"
+fi
+
+if [[ -z "${TMUX:-}" || -z "${TMUX_PANE:-}" ]]; then
+  exit 0
+fi
+
+state="${1:-idle}"
+title_action="${2:-use-cache}"
+claude_home="${CLAUDE_HOME:-$HOME/.claude}"
+title_cache_dir="$claude_home/tmux-title-cache"
+title_model="${CLAUDE_TMUX_TITLE_MODEL:-haiku}"
+title_timeout="${CLAUDE_TMUX_TITLE_TIMEOUT:-45s}"
+
+normalize_title() {
+  tr '\n\r\t' '   ' | sed -E 's/[[:space:]]+/ /g; s/^ //; s/ $//'
+}
+
+humanize_title_source() {
+  sed -E 's/[-_]+/ /g' | normalize_title
+}
+
+safe_cache_key() {
+  tr -cd '[:alnum:]._-' | sed -E 's/^$/unknown/'
+}
+
+hash_text() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum | awk '{print $1}'
+  else
+    cksum | awk '{print $1 "-" $2}'
+  fi
+}
+
+json_get() {
+  local filter="$1"
+
+  [[ -n "$hook_input" ]] || return 1
+  command -v jq >/dev/null 2>&1 || return 1
+  printf "%s" "$hook_input" | jq -er "$filter // empty" 2>/dev/null
+}
+
+brief_session_title() {
+  awk '
+    BEGIN {
+      max_words = 4
+      max_len = 34
+      split("a an and are as at be but by can could did do does for from has have if in into is it its let lets make need now of on or our please set sets should so that the their this to use using want we with would you your claude code session title appropiate appropriate", stop_words)
+      for (i in stop_words) stop[stop_words[i]] = 1
+    }
+
+    {
+      gsub(/[_-]+/, " ")
+      gsub(/[^[:alnum:]#+.]+/, " ")
+      for (i = 1; i <= NF; i++) {
+        word = $i
+        gsub(/^[^[:alnum:]]+|[^[:alnum:]]+$/, "", word)
+        lower = tolower(word)
+
+        if (lower == "") continue
+
+        formatted = format_word(word)
+        if (!(lower in seen)) {
+          fallback[++fallback_count] = formatted
+          seen[lower] = 1
+        }
+
+        if (stop[lower]) continue
+        if (length(lower) <= 2 && word !~ /^[A-Z0-9]{2,}$/) continue
+
+        if (!(lower in primary_seen)) {
+          primary[++primary_count] = formatted
+          primary_seen[lower] = 1
+        }
+      }
+    }
+
+    END {
+      for (i = 1; i <= primary_count && word_count < max_words; i++) {
+        add_word(primary[i])
+      }
+
+      for (i = 1; i <= fallback_count && word_count < 3; i++) {
+        add_word(fallback[i])
+      }
+
+      print out == "" ? "New Session" : out
+    }
+
+    function add_word(word, candidate) {
+      if (word == "") return
+      if (added[tolower(word)]) return
+
+      candidate = out == "" ? word : out " " word
+      if (word_count >= 2 && length(candidate) > max_len) return
+      if (word_count > 0 && length(candidate) > max_len) return
+      if (word_count == 0 && length(candidate) > max_len) {
+        candidate = substr(candidate, 1, max_len)
+      }
+
+      out = candidate
+      added[tolower(word)] = 1
+      word_count++
+    }
+
+    function format_word(word, lower) {
+      if (word ~ /^[A-Z0-9#+.]+$/) return word
+      lower = tolower(word)
+      return toupper(substr(lower, 1, 1)) substr(lower, 2)
+    }
+  '
+}
+
+title_word_count() {
+  awk '{print NF; exit}'
+}
+
+workspace_window_title() {
+  local cwd="$1"
+  local root
+  local base
+
+  [[ -n "$cwd" ]] || cwd="$PWD"
+
+  if command -v git >/dev/null 2>&1; then
+    root="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || true)"
+  fi
+
+  [[ -n "${root:-}" ]] || root="$cwd"
+  if [[ "${root%/}" == "${HOME%/}" ]]; then
+    printf "~\n"
+    return
+  fi
+
+  base="$(basename "$root")"
+
+  if [[ "$base" == .* ]]; then
+    base="$(basename "$(dirname "$root")")"
+  fi
+
+  [[ -n "$base" && "$base" != "/" ]] || base="workspace"
+  printf "%s\n" "$base"
+}
+
+claude_session_name() {
+  local session_id="$1"
+  local file
+  local value
+
+  [[ -n "$session_id" && -d "$claude_home/sessions" ]] || return 1
+  command -v jq >/dev/null 2>&1 || return 1
+
+  for file in "$claude_home"/sessions/*.json; do
+    [[ -e "$file" ]] || continue
+    value="$(jq -r --arg sid "$session_id" 'if .sessionId == $sid then (.name // "") else "" end' "$file" 2>/dev/null | humanize_title_source)"
+    if [[ -n "$value" ]]; then
+      printf "%s\n" "$value"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+transcript_slug() {
+  local session_id="$1"
+  local transcript_path="$2"
+
+  [[ -r "$transcript_path" ]] || return 1
+  command -v jq >/dev/null 2>&1 || return 1
+
+  jq -r --arg sid "$session_id" '
+    select((($sid == "") or (.sessionId? == $sid)) and (((.isSidechain? // false) | not)) and ((.slug? // "") != ""))
+    | .slug
+  ' "$transcript_path" 2>/dev/null | head -n 1 | humanize_title_source
+}
+
+claude_session_source() {
+  local session_id="$1"
+  local transcript_path="$2"
+  local user_prompt="$3"
+  local source
+
+  source="$(claude_session_name "$session_id" 2>/dev/null || true)"
+  if [[ -n "$source" ]]; then
+    printf "%s\n" "$source"
+    return 0
+  fi
+
+  source="$(transcript_slug "$session_id" "$transcript_path" 2>/dev/null || true)"
+  if [[ -n "$source" ]]; then
+    printf "%s\n" "$source"
+    return 0
+  fi
+
+  if [[ -n "$user_prompt" ]]; then
+    printf "%s\n" "$user_prompt" | normalize_title
+    return 0
+  fi
+
+  return 1
+}
+
+write_cache_title() {
+  local title="$1"
+  local source_hash="$2"
+  local cache_file="$3"
+  local hash_file="$4"
+  local tmp_file="$cache_file.tmp.$$"
+  local hash_tmp_file="$hash_file.tmp.$$"
+
+  mkdir -p "$title_cache_dir" 2>/dev/null || return 1
+  printf "%s\n" "$title" > "$tmp_file" || return 1
+  mv "$tmp_file" "$cache_file" || return 1
+  printf "%s\n" "$source_hash" > "$hash_tmp_file" || return 1
+  mv "$hash_tmp_file" "$hash_file" || return 1
+}
+
+generate_title_with_claude() {
+  local source="$1"
+  local source_hash="$2"
+  local cache_file="$3"
+  local hash_file="$4"
+  local raw_file="$cache_file.raw.$$"
+  local prompt
+  local generated
+
+  command -v claude >/dev/null 2>&1 || return 1
+  command -v timeout >/dev/null 2>&1 || return 1
+
+  prompt="$(printf '%s\n\n%s\n\n%s\n\nExisting title:\n%s\n' \
+    "Rewrite this existing Claude Code session title into a short tmux window title." \
+    "Rules: 3-4 words, normal spacing, no quotes, no punctuation, no emoji, no markdown, no explanation." \
+    "Keep the core task meaning. Do not include Claude or Code unless essential." \
+    "$source")"
+
+  timeout "$title_timeout" env CLAUDE_TMUX_TITLE_CHILD=1 claude -p \
+    --model "$title_model" \
+    --no-session-persistence \
+    --setting-sources user \
+    "$prompt" \
+    >"$raw_file" 2>/dev/null || {
+      rm -f "$raw_file"
+      return 1
+    }
+
+  [[ -s "$raw_file" ]] || {
+    rm -f "$raw_file"
+    return 1
+  }
+
+  generated="$(normalize_title < "$raw_file")"
+  rm -f "$raw_file"
+  generated="$(printf "%s\n" "$generated" | brief_session_title)"
+  if [[ "$(printf "%s\n" "$generated" | title_word_count)" -lt 3 ]]; then
+    generated="$(printf "%s %s\n" "$generated" "$source" | brief_session_title)"
+  fi
+
+  [[ -n "$generated" && "$generated" != "New Session" ]] || return 1
+  write_cache_title "$generated" "$source_hash" "$cache_file" "$hash_file"
+}
+
+ensure_generated_title() {
+  local cache_key="$1"
+  local source="$2"
+  local cache_file="$title_cache_dir/$cache_key.title"
+  local hash_file="$title_cache_dir/$cache_key.source_hash"
+  local lock_dir="$title_cache_dir/$cache_key.lock"
+  local source_hash
+  local cached_title
+  local cached_hash
+  local fallback_title
+  local i
+
+  [[ "$title_action" == "generate" ]] || return 0
+  [[ -n "$source" ]] || return 0
+
+  mkdir -p "$title_cache_dir" 2>/dev/null || return 0
+  source_hash="$(printf "%s" "$source" | hash_text)"
+  cached_title=""
+  cached_hash=""
+  [[ -s "$cache_file" ]] && cached_title="$(normalize_title < "$cache_file")"
+  [[ -s "$hash_file" ]] && cached_hash="$(normalize_title < "$hash_file")"
+
+  if [[ -n "$cached_title" ]]; then
+    if [[ "$cached_hash" == "$source_hash" || "$(printf "%s" "$source" | brief_session_title)" == "$cached_title" ]]; then
+      [[ "$cached_hash" == "$source_hash" ]] || printf "%s\n" "$source_hash" > "$hash_file" 2>/dev/null || true
+      return 0
+    fi
+  fi
+
+  if ! mkdir "$lock_dir" 2>/dev/null; then
+    for i in 1 2 3 4 5; do
+      sleep 1
+      [[ -s "$cache_file" ]] && return 0
+    done
+    return 0
+  fi
+
+  if ! generate_title_with_claude "$source" "$source_hash" "$cache_file" "$hash_file"; then
+    fallback_title="$(printf "%s\n" "$source" | brief_session_title)"
+    [[ -n "$fallback_title" ]] && write_cache_title "$fallback_title" "$source_hash" "$cache_file" "$hash_file" 2>/dev/null || true
+  fi
+
+  rmdir "$lock_dir" 2>/dev/null || true
+}
+
+apply_tmux_title() {
+  local state="$1"
+  local title_base="$2"
+  local cwd="$3"
+  local title
+  local window_title
+  local window_target
+  local pane_border_format
+
+  case "$state" in
+    working)
+      title="claude [working]: $title_base"
+      ;;
+    attention)
+      title="🔔 claude: $title_base"
+      ;;
+    idle|*)
+      title="claude: $title_base"
+      ;;
+  esac
+
+  tmux select-pane -t "$TMUX_PANE" -T "$title" 2>/dev/null || true
+  tmux set-option -p -t "$TMUX_PANE" @agent_title "$title" 2>/dev/null || true
+  tmux set-option -p -t "$TMUX_PANE" @claude_title "$title" 2>/dev/null || true
+
+  pane_border_format=" #{?#{!=:#{@agent_title},},#{@agent_title},#{?#{!=:#{@codex_title},},#{@codex_title},#{?#{!=:#{@claude_title},},#{@claude_title},#($HOME/.tmux/plugins/tmux-peacock/scripts/pane-title-colored.py '#{q:pane_current_path}')}}} "
+  tmux set-option -g pane-border-format "$pane_border_format" 2>/dev/null || true
+
+  window_target="$(tmux display-message -p -t "$TMUX_PANE" '#{session_name}:#{window_index}' 2>/dev/null || true)"
+  if [[ -n "$window_target" ]]; then
+    window_title="$(workspace_window_title "$cwd")"
+    tmux rename-window -t "$window_target" "$window_title" 2>/dev/null || true
+  fi
+}
+
+emit_session_title_output() {
+  local title_base="$1"
+
+  [[ "$hook_event" == "UserPromptSubmit" && "$title_action" == "generate" ]] || return 0
+  [[ -n "$title_base" ]] || return 0
+
+  if command -v jq >/dev/null 2>&1; then
+    jq -cn --arg title "$title_base" '{hookSpecificOutput:{sessionTitle:$title}}'
+  else
+    printf '{"hookSpecificOutput":{"sessionTitle":"%s"}}\n' "$title_base"
+  fi
+}
+
+session_id="$(json_get '.session_id' 2>/dev/null || true)"
+session_id="${session_id:-${CLAUDE_CODE_SESSION_ID:-}}"
+transcript_path="$(json_get '.transcript_path' 2>/dev/null || true)"
+hook_cwd="$(json_get '.cwd' 2>/dev/null || true)"
+hook_cwd="${hook_cwd:-$PWD}"
+hook_event="$(json_get '.hook_event_name' 2>/dev/null || true)"
+user_prompt="$(json_get '.user_prompt' 2>/dev/null || true)"
+
+source_title="$(claude_session_source "$session_id" "$transcript_path" "$user_prompt" 2>/dev/null || true)"
+cache_key="$(printf "%s" "${session_id:-cwd-$hook_cwd}" | safe_cache_key)"
+cache_file="$title_cache_dir/$cache_key.title"
+
+ensure_generated_title "$cache_key" "$source_title"
+
+if [[ -s "$cache_file" ]]; then
+  title_base="$(normalize_title < "$cache_file" | brief_session_title)"
+else
+  title_base="$(printf "%s" "$source_title" | brief_session_title)"
+fi
+
+if [[ -z "$title_base" || "$title_base" == "New Session" ]]; then
+  title_base="$("$HOME/bin/tmux-pane-title" "$hook_cwd" 2>/dev/null || basename "$hook_cwd")"
+  title_base="$(printf "%s" "$title_base" | brief_session_title)"
+fi
+
+apply_tmux_title "$state" "$title_base" "$hook_cwd"
+emit_session_title_output "$title_base"
