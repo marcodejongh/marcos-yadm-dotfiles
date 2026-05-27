@@ -295,4 +295,6 @@ export PATH="$PATH:$JAVA_HOME/bin"
 [ -f "$HOME/.vite-plus/env" ] && . "$HOME/.vite-plus/env"
 [ -f ~/.claude_env ] && source ~/.claude_env
 export PATH="$HOME/.bun/bin:$PATH"
-[ -z "$TMUX" ] && [ -n "$SSH_CONNECTION" ] && [ -t 0 ] && exec tmux new-session -A -s main
+if [[ -z "${TMUX:-}" && -n "${SSH_CONNECTION:-}" && -t 0 && -x "$HOME/bin/tmux-main-attach" ]]; then
+  exec "$HOME/bin/tmux-main-attach"
+fi

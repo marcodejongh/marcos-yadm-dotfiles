@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.marcodejongh.tmux-main</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/marcodejongh/bin/tmux-main-service</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>ProcessType</key>
+  <string>Background</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>LANG</key>
+    <string>en_US.UTF-8</string>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/marcodejongh/bin:/Users/marcodejongh/.local/bin:/Users/marcodejongh/.cargo/bin:/Users/marcodejongh/.bun/bin</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/Users/marcodejongh/Library/Logs/tmux-main.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/marcodejongh/Library/Logs/tmux-main.err.log</string>
+</dict>
+</plist>

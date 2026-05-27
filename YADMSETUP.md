@@ -18,4 +18,9 @@ See:
 ### Future
 1. 1 day setup 1password cli agent toml to store ssh keys in appropiate vaults
 
+### tmux on macOS
+1. Run `macos-privacy-preflight` locally from Alacritty and grant any macOS Privacy & Security prompts before relying on remote SSH attach.
+2. Load the managed tmux service with `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.marcodejongh.tmux-main.plist`.
+3. Use `tmux -L main ...` for direct commands against the managed session.
+4. Use `yadm list -a` when you need the full dotfile inventory, including platform alternates.
 

@@ -1,0 +1,48 @@
+#!/usr/bin/env zsh
+set -euo pipefail
+
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/bin:$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin"
+export LANG="${LANG:-en_US.UTF-8}"
+
+socket_name="${TMUX_MAIN_SOCKET_NAME:-main}"
+session_name="${TMUX_MAIN_SESSION_NAME:-main}"
+check_interval="${TMUX_MAIN_SERVICE_INTERVAL:-30}"
+tmux_bin="${TMUX_BIN:-$(command -v tmux)}"
+shell_bin="${SHELL:-/bin/zsh}"
+
+log() {
+  printf '%s %s\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')" "$*" >&2
+}
+
+ensure_server() {
+  if "$tmux_bin" -L "$socket_name" display-message -p '#{pid}' >/dev/null 2>&1; then
+    return 0
+  fi
+
+  log "starting tmux server on socket '$socket_name'"
+  "$tmux_bin" -L "$socket_name" start-server \; set-option -g exit-empty off \; set-option -g exit-unattached off
+}
+
+ensure_session() {
+  if "$tmux_bin" -L "$socket_name" has-session -t "$session_name" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  log "creating tmux session '$session_name' on socket '$socket_name'"
+  "$tmux_bin" -L "$socket_name" new-session -d -s "$session_name" -n shell "$shell_bin" -l
+}
+
+shutdown() {
+  # Let tmux return to its normal lifecycle when this LaunchAgent is booted out.
+  "$tmux_bin" -L "$socket_name" set-option -g exit-empty on >/dev/null 2>&1 || true
+  "$tmux_bin" -L "$socket_name" set-option -g exit-unattached on >/dev/null 2>&1 || true
+  exit 0
+}
+
+trap shutdown INT TERM
+
+while true; do
+  ensure_server
+  ensure_session
+  sleep "$check_interval"
+done

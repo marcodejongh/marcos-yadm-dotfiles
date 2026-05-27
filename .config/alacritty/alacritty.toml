@@ -1,5 +1,8 @@
 [window]
 option_as_alt = "Both"
 
+[terminal.shell]
+program = "/Users/marcodejongh/bin/tmux-main-attach"
+
 [font.normal]
 family = "MesloLGS NF"

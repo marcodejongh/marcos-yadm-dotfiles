@@ -102,6 +102,14 @@ if [ "$os_name" = "macos" ]; then
         echo "Syncing brew packages with brew bundle"
         brew bundle install --global
     fi
+
+    tmux_agent="$HOME/Library/LaunchAgents/com.marcodejongh.tmux-main.plist"
+    if [ -f "$tmux_agent" ]; then
+        echo "Loading tmux main LaunchAgent"
+        launchctl bootstrap "gui/$(id -u)" "$tmux_agent" 2>/dev/null || true
+        launchctl enable "gui/$(id -u)/com.marcodejongh.tmux-main" 2>/dev/null || true
+        launchctl kickstart -k "gui/$(id -u)/com.marcodejongh.tmux-main" 2>/dev/null || true
+    fi
 elif [ "$os_name" = "fedora" ]; then
     echo "Installing packages from fedora.txt (you may be prompted for password)"
     fedora_packages="$HOME/.config/yadm/packages/fedora.txt"

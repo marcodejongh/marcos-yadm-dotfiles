@@ -1,0 +1,46 @@
+#!/usr/bin/env zsh
+set -euo pipefail
+
+if [[ "$(uname -s)" != "Darwin" ]]; then
+  echo "macos-privacy-preflight only applies to macOS."
+  exit 0
+fi
+
+if [[ -n "${SSH_CONNECTION:-}" ]]; then
+  echo "Run this from a local GUI terminal, not over SSH."
+  exit 2
+fi
+
+echo "Warming macOS privacy prompts for the local terminal app..."
+
+clipboard_text="$(/usr/bin/pbpaste 2>/dev/null || true)"
+
+protected_paths=(
+  "$HOME/Library/Application Support/Code/User/settings.json"
+  "$HOME/Library/Application Support/Code/User"
+  "$HOME/Library/Mobile Documents"
+  "$HOME/Desktop"
+  "$HOME/Documents"
+  "$HOME/Downloads"
+)
+
+for path in "${protected_paths[@]}"; do
+  if [[ -e "$path" ]]; then
+    /usr/bin/stat "$path" >/dev/null 2>&1 || true
+  fi
+done
+
+if command -v yadm >/dev/null 2>&1; then
+  yadm list -a >/dev/null 2>&1 || true
+fi
+
+printf 'tmux-main privacy preflight\n' | /usr/bin/pbcopy >/dev/null 2>&1 || true
+/usr/bin/pbpaste >/dev/null 2>&1 || true
+printf '%s' "$clipboard_text" | /usr/bin/pbcopy >/dev/null 2>&1 || true
+
+/usr/bin/osascript -e 'tell application "System Events" to get name of first process' >/dev/null 2>&1 || true
+
+cat <<'EOF'
+Done. If macOS showed prompts, grant the local terminal app access in System Settings > Privacy & Security.
+Useful panes to check: Files & Folders, Full Disk Access, Accessibility, and Automation.
+EOF

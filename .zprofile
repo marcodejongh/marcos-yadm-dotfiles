@@ -83,4 +83,7 @@ fi
 #source "$HOME/.rye/env"
 
 if [ -f "$HOME/.afm-bin-path-manager.zsh" ]; then source "$HOME/.afm-bin-path-manager.zsh"; fi
-[ -z "$TMUX" ] && [ -n "$SSH_CONNECTION" ] && [ -t 0 ] && exec tmux new-session -A -s main
+
+if [[ -z "${TMUX:-}" && -n "${SSH_CONNECTION:-}" && -t 0 && -x "$HOME/bin/tmux-main-attach" ]]; then
+  exec "$HOME/bin/tmux-main-attach"
+fi

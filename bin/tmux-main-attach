@@ -1,0 +1,56 @@
+#!/usr/bin/env zsh
+set -euo pipefail
+
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/bin:$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin"
+
+socket_name="${TMUX_MAIN_SOCKET_NAME:-main}"
+session_name="${TMUX_MAIN_SESSION_NAME:-main}"
+label="${TMUX_MAIN_LAUNCHD_LABEL:-com.marcodejongh.tmux-main}"
+plist="$HOME/Library/LaunchAgents/$label.plist"
+tmux_bin="${TMUX_BIN:-$(command -v tmux)}"
+
+if [[ -n "${TMUX:-}" ]]; then
+  exec "${SHELL:-/bin/zsh}" -l
+fi
+
+wait_for_session() {
+  local attempts="${1:-20}"
+  local attempt=0
+
+  while (( attempt < attempts )); do
+    if "$tmux_bin" -L "$socket_name" has-session -t "$session_name" >/dev/null 2>&1; then
+      return 0
+    fi
+    (( attempt += 1 ))
+    sleep 0.25
+  done
+
+  return 1
+}
+
+start_launch_agent() {
+  [[ "$(uname -s)" == "Darwin" ]] || return 1
+  [[ -f "$plist" ]] || return 1
+
+  local domain="gui/$(id -u)"
+
+  launchctl bootstrap "$domain" "$plist" >/dev/null 2>&1 || true
+  launchctl enable "$domain/$label" >/dev/null 2>&1 || true
+  launchctl kickstart "$domain/$label" >/dev/null 2>&1 || true
+}
+
+if ! "$tmux_bin" -L "$socket_name" has-session -t "$session_name" >/dev/null 2>&1; then
+  start_launch_agent || true
+fi
+
+if ! wait_for_session 24; then
+  if [[ -n "${SSH_CONNECTION:-}" ]]; then
+    print -u2 "tmux service '$label' is not available. Log in locally and run: launchctl bootstrap gui/$(id -u) '$plist'"
+    exit 1
+  fi
+
+  print -u2 "tmux service '$label' did not create session '$session_name'. Check ~/Library/Logs/tmux-main.err.log"
+  exit 1
+fi
+
+exec "$tmux_bin" -L "$socket_name" new-session -A -s "$session_name"
