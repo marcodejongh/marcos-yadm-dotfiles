@@ -1,2 +1,23 @@
 [font.normal]
 family = "MesloLGS NF"
+
+[hints]
+alphabet = "jfkdls;ahgurieowpq"
+
+# GitHub PR refs: "#1234" (focused pane's repo) or "owner/repo#1234"
+[[hints.enabled]]
+regex = '(?:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+'
+post_processing = true
+command = { program = "/home/developer/bin/gh-pr-open" }
+mouse = { enabled = true, mods = "Control" }
+binding = { key = "P", mods = "Control|Shift" }
+
+# Plain http(s) links (replaces Alacritty's built-in default URL hint, which
+# defining [hints] otherwise removes)
+[[hints.enabled]]
+regex = 'https?://[^\s<>"(){}\[\]]+'
+hyperlinks = true
+post_processing = true
+command = "xdg-open"
+mouse = { enabled = true, mods = "Control" }
+binding = { key = "U", mods = "Control|Shift" }

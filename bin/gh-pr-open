@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# gh-pr-open — open a GitHub PR reference in the browser.
+# Called by Alacritty's PR hint with the matched text as $1:
+#   "#1234"               -> repo inferred from the focused tmux pane's CWD
+#   "owner/repo#1234"     -> that repo explicitly
+set -euo pipefail
+
+ref="${1:-}"
+log="${XDG_CACHE_HOME:-$HOME/.cache}/gh-pr-open.log"
+
+note() {  # surface failures: log file + tmux status line (hint cmds are detached)
+  printf '%s  %s\n' "$(date '+%F %T')" "$1" >>"$log" 2>/dev/null || true
+  command -v tmux >/dev/null 2>&1 && tmux display-message "gh-pr-open: $1" 2>/dev/null || true
+  printf 'gh-pr-open: %s\n' "$1" >&2
+}
+
+open_url() {
+  if   command -v xdg-open >/dev/null 2>&1; then xdg-open "$1"
+  elif command -v open     >/dev/null 2>&1; then open "$1"
+  else note "no opener (xdg-open/open) found"; return 1; fi
+}
+
+# Web URL for the repo containing $1. Primary: reuse the user's `git web-url`
+# alias (.gitconfig). Fallback: inline ssh/https normalisation.
+web_url() {
+  local dir="$1" url
+  url=$(git -C "$dir" web-url 2>/dev/null || true)
+  if [[ -z "$url" ]]; then
+    url=$(git -C "$dir" remote get-url origin 2>/dev/null) || return 1
+    url=$(printf '%s' "$url" \
+      | sed -e 's#^git@#https://#' -e 's#^ssh://##' -e 's#\.git$##' \
+      | sed -E 's#(//[^/:]*):#\1/#')
+  fi
+  [[ -n "$url" ]] && printf '%s' "$url"
+}
+
+num="${ref##*#}"     # digits after the last '#'
+prefix="${ref%%#*}"  # '' for "#123", "owner/repo" for "owner/repo#123"
+[[ "$ref" == *#* && "$num" =~ ^[0-9]+$ ]] || { note "not a PR ref: '$ref'"; exit 1; }
+
+if [[ "$prefix" == */* ]]; then
+  base="https://github.com/$prefix"
+else
+  dir=$(tmux display-message -p '#{pane_current_path}' 2>/dev/null || true)
+  [[ -n "$dir" && -d "$dir" ]] || dir="$PWD"
+  base=$(web_url "$dir") || { note "can't resolve repo from: $dir"; exit 1; }
+fi
+
+open_url "$base/pull/$num"
