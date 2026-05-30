@@ -1,6 +1,8 @@
 #!/usr/bin/env zsh
 set -euo pipefail
 
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/bin:$HOME/.local/bin"
+
 if [[ "$(uname -s)" != "Darwin" ]]; then
   echo "macos-privacy-preflight only applies to macOS."
   exit 0
@@ -40,7 +42,7 @@ printf '%s' "$clipboard_text" | /usr/bin/pbcopy >/dev/null 2>&1 || true
 
 /usr/bin/osascript -e 'tell application "System Events" to get name of first process' >/dev/null 2>&1 || true
 
-cat <<'EOF'
+/bin/cat <<'EOF'
 Done. If macOS showed prompts, grant the local terminal app access in System Settings > Privacy & Security.
 Useful panes to check: Files & Folders, Full Disk Access, Accessibility, and Automation.
 EOF
