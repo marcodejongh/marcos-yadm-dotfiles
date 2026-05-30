@@ -1,0 +1,4 @@
+#!/usr/bin/env zsh
+set -euo pipefail
+
+exec open -n -a Alacritty --args -e /usr/bin/env TMUX_MAIN_NO_AUTO_ATTACH=1 /bin/zsh -l

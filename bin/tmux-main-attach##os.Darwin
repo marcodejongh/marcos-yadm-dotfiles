@@ -13,6 +13,10 @@ if [[ -n "${TMUX:-}" ]]; then
   exec "${SHELL:-/bin/zsh}" -l
 fi
 
+if [[ "${TMUX_MAIN_NO_AUTO_ATTACH:-}" == "1" ]]; then
+  exec "${SHELL:-/bin/zsh}" -l
+fi
+
 wait_for_session() {
   local attempts="${1:-20}"
   local attempt=0

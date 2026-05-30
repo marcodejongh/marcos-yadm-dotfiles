@@ -295,6 +295,14 @@ export PATH="$PATH:$JAVA_HOME/bin"
 [ -f "$HOME/.vite-plus/env" ] && . "$HOME/.vite-plus/env"
 [ -f ~/.claude_env ] && source ~/.claude_env
 export PATH="$HOME/.bun/bin:$PATH"
-if [[ -z "${TMUX:-}" && -n "${SSH_CONNECTION:-}" && -t 0 && -x "$HOME/bin/tmux-main-attach" ]]; then
-  exec "$HOME/bin/tmux-main-attach"
+alias plain-terminal='open -n -a Alacritty --args -e /usr/bin/env TMUX_MAIN_NO_AUTO_ATTACH=1 /bin/zsh -l'
+
+if [[ -o interactive && -z "${TMUX:-}" && -z "${TMUX_MAIN_NO_AUTO_ATTACH:-}" && -n "${SSH_CONNECTION:-}" && -t 0 ]]; then
+  if [[ -x "$HOME/bin/tmux-main-attach" ]]; then
+    print -u2 "Attaching to tmux service 'main'. Use TMUX_MAIN_NO_AUTO_ATTACH=1 to skip."
+    exec "$HOME/bin/tmux-main-attach"
+  elif command -v tmux >/dev/null 2>&1; then
+    print -u2 "Attaching to tmux session 'main'. Use TMUX_MAIN_NO_AUTO_ATTACH=1 to skip."
+    exec tmux new-session -A -s main
+  fi
 fi

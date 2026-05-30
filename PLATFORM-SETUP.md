@@ -65,11 +65,33 @@ This repository has been configured to work across multiple platforms: macOS, Fe
 
 ## Template Files
 
-YADM templates are used for platform-specific configurations:
+YADM alternates are used for platform-specific configurations:
 - Files ending with `##os.Darwin` are for macOS
 - Files ending with `##os.Linux` are for Linux
 - Files ending with `##distro.fedora` are for Fedora specifically
 - Files ending with `##distro.ubuntu` are for Ubuntu specifically
+- Files ending with `##class.proxmox` apply when `yadm config local.class proxmox` is set (Proxmox bootstrap sets this automatically)
+
+On Darwin, `yadm alt` materializes the un-suffixed symlink to the matching source. On Linux, the suffixed source still occupies its tracked path in the work tree but no symlink is created, so the file has no effect.
+
+### macOS-only files (`##os.Darwin`)
+
+- `.Brewfile##os.Darwin` — Homebrew bundle
+- `.config/alacritty/alacritty.toml##os.Darwin` — full Alacritty config (window/`option_as_alt`, `[terminal.shell]` pointing at `tmux-main-attach`)
+- `Library/LaunchAgents/com.marcodejongh.tmux-main.plist##os.Darwin` — launchd unit for the managed tmux session
+- `bin/tmux-main-attach##os.Darwin`, `bin/tmux-main-service##os.Darwin` — managed-tmux helpers (use `launchctl`)
+- `bin/macos-privacy-preflight##os.Darwin` — warms macOS Privacy & Security prompts
+- `Library/Application Support/Code/User/settings.json##os.Darwin` — VS Code settings (macOS path)
+
+### Linux-only files (`##os.Linux`)
+
+- `.config/alacritty/alacritty.toml##os.Linux` — Alacritty font block only
+- `.config/Code/User/settings.json##os.Linux` — VS Code settings (Linux path)
+
+### Cross-platform with conditional behavior
+
+- `.zprofile`, `.zshrc` — SSH+tmux block prefers `~/bin/tmux-main-attach` (macOS managed session) and falls back to `exec tmux new-session -A -s main` on Linux.
+- `.config/yadm/bootstrap` — branches on `uname -s` and `/etc/os-release`; loads the LaunchAgent only on macOS.
 
 ## Manual Setup Required
 
