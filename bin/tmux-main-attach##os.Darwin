@@ -3,8 +3,35 @@ set -euo pipefail
 
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/bin:$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin"
 
-socket_name="${TMUX_MAIN_SOCKET_NAME:-main}"
-session_name="${TMUX_MAIN_SESSION_NAME:-main}"
+attach_profile="${TMUX_ATTACH_PROFILE:-${LC_TMUX_ATTACH_PROFILE:-}}"
+attach_target="${TMUX_ATTACH_TARGET:-${LC_TMUX_ATTACH_TARGET:-}}"
+
+socket_name="${TMUX_MAIN_SOCKET_NAME:-${LC_TMUX_MAIN_SOCKET_NAME:-main}}"
+session_name="${TMUX_MAIN_SESSION_NAME:-${LC_TMUX_MAIN_SESSION_NAME:-main}}"
+
+case "$attach_profile" in
+  current|default)
+    socket_name="default"
+    session_name="0"
+    ;;
+  service|main|"")
+    ;;
+  *)
+    print -u2 "Unknown TMUX attach profile '$attach_profile'. Use 'current' or 'service'."
+    exit 2
+    ;;
+esac
+
+if [[ -n "$attach_target" ]]; then
+  if [[ "$attach_target" != *:* ]]; then
+    print -u2 "TMUX attach target must be socket:session, for example default:0."
+    exit 2
+  fi
+
+  socket_name="${attach_target%%:*}"
+  session_name="${attach_target#*:}"
+fi
+
 label="${TMUX_MAIN_LAUNCHD_LABEL:-com.marcodejongh.tmux-main}"
 plist="$HOME/Library/LaunchAgents/$label.plist"
 tmux_bin="${TMUX_BIN:-$(command -v tmux)}"
