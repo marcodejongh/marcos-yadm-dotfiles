@@ -3,14 +3,44 @@ set -euo pipefail
 
 tmux_bin="${TMUX_BIN:-tmux}"
 
+touch_pane() {
+  local target="${1:-}"
+  local current next
+
+  if [[ -z "$target" ]]; then
+    exit 0
+  fi
+
+  "$tmux_bin" wait-for -L pane-switcher-recency
+  trap '"$tmux_bin" wait-for -U pane-switcher-recency' EXIT
+
+  current="$("$tmux_bin" show-option -gqv @pane_switcher_seq 2>/dev/null || true)"
+  if [[ ! "$current" =~ ^[0-9]+$ ]]; then
+    current=0
+  fi
+
+  next=$((current + 1))
+  "$tmux_bin" set-option -gq @pane_switcher_seq "$next"
+  "$tmux_bin" set-option -pqt "$target" @pane_switcher_last_used "$next" 2>/dev/null || true
+}
+
+case "${1:-}" in
+  --touch)
+    touch_pane "${2:-}"
+    exit 0
+    ;;
+esac
+
 if ! command -v fzf >/dev/null 2>&1; then
   "$tmux_bin" display-message "fzf not found"
   exit 1
 fi
 
+current_pane="$("$tmux_bin" display-message -p '#{pane_id}' 2>/dev/null || true)"
+
 selection="$(
-  "$tmux_bin" list-panes -aF '#{session_name}	#{window_index}	#{pane_index}	#{window_bell_flag}	#{window_activity_flag}	#{window_name}	#{pane_current_command}	#{pane_current_path}	#{@agent_title}	#{pane_title}' |
-    awk -F '\t' '
+  "$tmux_bin" list-panes -aF '#{session_name}	#{window_index}	#{pane_index}	#{window_bell_flag}	#{window_activity_flag}	#{window_name}	#{pane_current_command}	#{pane_current_path}	#{@agent_title}	#{pane_title}	#{pane_id}	#{@pane_switcher_last_used}' |
+    awk -F '\t' -v current_pane="$current_pane" '
       function clean(value) {
         gsub(/\r/, "", value)
         gsub(/\t/, " ", value)
@@ -69,11 +99,14 @@ selection="$(
         cwd = clean($8)
         agent = clean($9)
         pane = clean($10)
+        pane_id = clean($11)
+        last_used = clean($12) + 0
 
         title = best_title(agent, pane, window, command)
         repo = basename(cwd)
         target = session ":" window_index "." pane_index
         combined = tolower(agent " " pane " " window " " command)
+        current_rank = (pane_id == current_pane) ? 1 : 0
 
         if (combined ~ /action required|needs action|blocked|failed|error/ || bell) {
           priority = 0
@@ -89,27 +122,26 @@ selection="$(
           marker = "[ ]"
         }
 
-        sort_key = sprintf("%02d|%s|%05d|%05d", priority, session, window_index, pane_index)
         row = sprintf("%s %-56s  %-24s  %-14s  %s", marker, shorten(title, 56), shorten(repo, 24), shorten(command, 14), target)
 
-        print sort_key "\t" target "\t" row
+        print current_rank "\t" priority "\t" last_used "\t" session "\t" window_index "\t" pane_index "\t" target "\t" row
       }
     ' |
-    sort -t $'\t' -k1,1 |
+    sort -t $'\t' -k1,1n -k2,2n -k3,3nr -k4,4 -k5,5n -k6,6n |
     fzf --delimiter=$'\t' \
-      --with-nth=3.. \
+      --with-nth=8.. \
       --no-sort \
       --reverse \
       --cycle \
       --prompt='pane> ' \
-      --header='Enter: switch  Esc: cancel  [!]=action/alert  [+]=activity  [>]=working'
+      --header='Enter: switch  Esc: cancel  attention first, newest within each group'
 )"
 
 if [[ -z "${selection:-}" ]]; then
   exit 0
 fi
 
-target="$(awk -F '\t' '{print $2}' <<<"$selection")"
+target="$(awk -F '\t' '{print $7}' <<<"$selection")"
 
 if [[ -n "$target" ]]; then
   exec "$tmux_bin" switch-client -t "$target"
