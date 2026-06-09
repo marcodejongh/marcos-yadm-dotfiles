@@ -178,6 +178,14 @@ gfm() {
     git fetch origin "$branch"
 }
 
+grh() {
+    local branch
+
+    branch=$(_git_main_or_master_branch) || return 1
+    git fetch origin "$branch"
+    git reset --hard origin/"$branch"
+}
+
 gri() {
     if [[ -n "$1" ]]; then
         git rebase --interactive "$1"
