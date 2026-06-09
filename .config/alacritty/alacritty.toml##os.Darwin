@@ -10,6 +10,11 @@ family = "MesloLGS NF"
 [hints]
 alphabet = "jfkdls;ahgurieowpq"
 
+[[keyboard.bindings]]
+key = "W"
+mods = "Alt"
+chars = "\u001bw"
+
 # GitHub PR refs: "#1234" (focused pane's repo) or "owner/repo#1234"
 [[hints.enabled]]
 regex = '(?:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+'
