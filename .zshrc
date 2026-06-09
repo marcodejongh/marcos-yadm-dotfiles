@@ -175,7 +175,7 @@ gfm() {
     local branch
 
     branch=$(_git_main_or_master_branch) || return 1
-    git pull origin "$branch"
+    git fetch origin "$branch"
 }
 
 gri() {
@@ -189,6 +189,34 @@ gri() {
     branch=$(_git_main_or_master_branch) || return 1
     git rebase --interactive "origin/$branch"
 }
+
+gWn() {
+    local name="${1:-wt-$(date +%Y%m%d-%H%M%S)}"
+    local repo_root target main_sha
+
+    if [[ "$name" == */* || "$name" == "." || "$name" == ".." ]]; then
+        echo "usage: gwn [worktree-name] (name only, no slashes)" >&2
+        return 2
+    fi
+
+    repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || {
+        echo "not inside a git repository" >&2
+        return 1
+    }
+
+    target="${repo_root:h}/$name"
+    if [[ -e "$target" ]]; then
+        echo "worktree path already exists: $target" >&2
+        return 1
+    fi
+
+    git fetch origin main || return 1
+    main_sha=$(git rev-parse --verify 'origin/main^{commit}') || return 1
+    git worktree add --detach "$target" "$main_sha" || return 1
+    cd "$target" || return 1
+}
+alias gwn='gWn'
+
 alias af="cd ~/Projects/atlassian/atlassian-frontend/master"
 alias cf="cd ~/Projects/atlassian/confluence-frontend/"
 alias jf="cd ~/Projects/atlassian/jira-frontend/"
