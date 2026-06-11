@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+set -u
+
+hook_name="$(basename "$0")"
+
+cache_hook_should_run() {
+  case "$hook_name" in
+    post-checkout|post-commit|post-merge|post-rewrite)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+queue_pr_cache_refresh() {
+  local cache_bin=""
+
+  cache_hook_should_run || return 0
+
+  if [[ -x "$HOME/bin/tmux-pr-cache" ]]; then
+    cache_bin="$HOME/bin/tmux-pr-cache"
+  elif command -v tmux-pr-cache >/dev/null 2>&1; then
+    cache_bin="$(command -v tmux-pr-cache)"
+  fi
+
+  [[ -n "$cache_bin" ]] || return 0
+
+  if command -v nohup >/dev/null 2>&1; then
+    (nohup "$cache_bin" refresh-path "$PWD" </dev/null >/dev/null 2>&1 &)
+  else
+    ("$cache_bin" refresh-path "$PWD" </dev/null >/dev/null 2>&1 &)
+  fi
+}
+
+append_hook_candidate() {
+  local hook_dir="$1"
+  local candidate
+
+  [[ -n "$hook_dir" ]] || return 0
+  candidate="$hook_dir/hooks/$hook_name"
+  [[ -x "$candidate" ]] || return 0
+  [[ "$candidate" -ef "$0" ]] 2>/dev/null && return 0
+
+  if [[ -z "${hook_candidates:-}" ]]; then
+    hook_candidates="$candidate"
+  elif [[ ":$hook_candidates:" != *":$candidate:"* ]]; then
+    hook_candidates="${hook_candidates}:$candidate"
+  fi
+}
+
+delegate_repo_hook() {
+  local hook_candidates=""
+  local git_dir=""
+  local common_dir=""
+  local candidate
+
+  git_dir="$(git rev-parse --path-format=absolute --git-dir 2>/dev/null || true)"
+  common_dir="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+
+  append_hook_candidate "$git_dir"
+  append_hook_candidate "$common_dir"
+
+  [[ -n "$hook_candidates" ]] || return 0
+
+  IFS=':' read -r -a candidates <<<"$hook_candidates"
+  for candidate in "${candidates[@]}"; do
+    "$candidate" "$@"
+    return $?
+  done
+
+  return 0
+}
+
+queue_pr_cache_refresh
+delegate_repo_hook "$@"

@@ -18,6 +18,7 @@
 	commitgraph = true
 	multipackindex = true
 	compression = 1
+	hooksPath = /Users/marcodejongh/.config/git/hooks
 	# sparseCheckoutCone = true  # Disabled for libgit2 compatibility
 [init]
 	defaultBranch = main
