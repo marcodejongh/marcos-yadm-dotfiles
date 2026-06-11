@@ -225,6 +225,78 @@ gWn() {
 }
 alias gwn='gWn'
 
+gWpr() {
+    local pr="$1"
+    local name="$2"
+    local repo_root target pr_data pr_number head_ref is_cross safe_head_ref source_ref source_sha local_branch existing_sha
+
+    if [[ -z "$pr" || -n "$3" ]]; then
+        echo "usage: gwpr <github-pr-id> [worktree-name]" >&2
+        return 2
+    fi
+
+    if ! command -v gh >/dev/null 2>&1; then
+        echo "gh is required for gwpr" >&2
+        return 1
+    fi
+
+    repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || {
+        echo "not inside a git repository" >&2
+        return 1
+    }
+
+    pr="${pr#\#}"
+    pr_data=$(gh pr view "$pr" --json number,headRefName,isCrossRepository --jq '[.number, .headRefName, .isCrossRepository] | @tsv') || return 1
+    IFS=$'\t' read -r pr_number head_ref is_cross <<< "$pr_data"
+
+    if [[ -z "$pr_number" || -z "$head_ref" ]]; then
+        echo "couldn't determine source branch for PR: $pr" >&2
+        return 1
+    fi
+
+    safe_head_ref="${head_ref//\//-}"
+    name="${name:-pr-${pr_number}-${safe_head_ref}}"
+
+    if [[ "$name" == */* || "$name" == "." || "$name" == ".." ]]; then
+        echo "usage: gwpr <github-pr-id> [worktree-name] (name only, no slashes)" >&2
+        return 2
+    fi
+
+    target="${repo_root:h}/$name"
+    if [[ -e "$target" ]]; then
+        echo "worktree path already exists: $target" >&2
+        return 1
+    fi
+
+    if [[ "$is_cross" == "false" ]]; then
+        git fetch origin "+refs/heads/${head_ref}:refs/remotes/origin/${head_ref}" || return 1
+        source_ref="origin/$head_ref"
+    else
+        git fetch origin "pull/${pr_number}/head" || return 1
+        source_ref="FETCH_HEAD"
+    fi
+
+    source_sha=$(git rev-parse --verify "${source_ref}^{commit}") || return 1
+    local_branch="$head_ref"
+    if git show-ref --verify --quiet "refs/heads/$local_branch"; then
+        existing_sha=$(git rev-parse --verify "${local_branch}^{commit}") || return 1
+        if [[ "$existing_sha" != "$source_sha" ]]; then
+            if git merge-base --is-ancestor "$local_branch" "$source_sha"; then
+                git branch -f "$local_branch" "$source_sha" || return 1
+            else
+                echo "local branch already exists and does not fast-forward to PR head: $local_branch" >&2
+                return 1
+            fi
+        fi
+        git worktree add "$target" "$local_branch" || return 1
+    else
+        git worktree add -b "$local_branch" "$target" "$source_ref" || return 1
+    fi
+
+    cd "$target" || return 1
+}
+alias gwpr='gWpr'
+
 alias af="cd ~/Projects/atlassian/atlassian-frontend/master"
 alias cf="cd ~/Projects/atlassian/confluence-frontend/"
 alias jf="cd ~/Projects/atlassian/jira-frontend/"
