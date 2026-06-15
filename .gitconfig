@@ -11,14 +11,14 @@
 [core]
 	editor = vim
 	pager = less
-	excludesfile = /Users/mdejongh/.gitignore_global
+	excludesfile = ~/.gitignore_global
 	# Performance optimizations for large repositories
 	fsmonitor = false
 	untrackedcache = true
 	commitgraph = true
 	multipackindex = true
 	compression = 1
-	hooksPath = /Users/marcodejongh/.config/git/hooks
+	hooksPath = ~/.config/git/hooks
 	# sparseCheckoutCone = true  # Disabled for libgit2 compatibility
 [init]
 	defaultBranch = main
