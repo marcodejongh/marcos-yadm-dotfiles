@@ -1,9 +1,6 @@
 [window]
 option_as_alt = "Both"
 
-[terminal.shell]
-program = "/Users/marcodejongh/bin/tmux-main-attach"
-
 [font.normal]
 family = "MesloLGS NF"
 
@@ -14,14 +11,6 @@ alphabet = "jfkdls;ahgurieowpq"
 key = "W"
 mods = "Alt"
 chars = "\u001bw"
-
-# GitHub PR refs: "#1234" (focused pane's repo) or "owner/repo#1234"
-[[hints.enabled]]
-regex = '(?:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+'
-post_processing = true
-command = { program = "/Users/marcodejongh/bin/gh-pr-open" }
-mouse = { enabled = true, mods = "Command" }
-binding = { key = "P", mods = "Control|Shift" }
 
 # Plain http(s) links (replaces Alacritty's built-in default URL hint, which
 # defining [hints] otherwise removes)
