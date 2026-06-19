@@ -225,6 +225,16 @@ gWn() {
 }
 alias gwn='gWn'
 
+gWnc() {
+    gWn "$1" && claude
+}
+alias gwnc='gWnc'
+
+gWnx() {
+    gWn "$1" && codex
+}
+alias gwnx='gWnx'
+
 gWpr() {
     local pr="$1"
     local name="$2"

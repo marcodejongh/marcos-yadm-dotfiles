@@ -90,7 +90,7 @@
 [pull]
 	rebase = true
 [diff]
-	external = difft
+	external = 
 	colorMoved = plain
 	mnemonicPrefix = true
 	renames = true
