@@ -30,12 +30,23 @@ touch_pane() {
   "$tmux_bin" set-option -pqt "$target" @pane_switcher_last_used "$next" 2>/dev/null || true
 }
 
-case "${1:-}" in
-  --touch)
-    touch_pane "${2:-}"
-    exit 0
-    ;;
-esac
+agents_only=0
+do_preview=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --touch)
+      touch_pane "${2:-}"
+      exit 0
+      ;;
+    --agents-only)
+      agents_only=1
+      ;;
+    --preview)
+      do_preview=1
+      ;;
+  esac
+  shift
+done
 
 if ! command -v fzf >/dev/null 2>&1; then
   "$tmux_bin" display-message "fzf not found"
@@ -61,8 +72,22 @@ elif command -v tmux-pr-cache >/dev/null 2>&1; then
   tmux-pr-cache read-cache >"$worktree_cache_file" 2>/dev/null || true
 fi
 
+fzf_prompt='pane> '
+if [[ "$agents_only" == "1" ]]; then
+  fzf_prompt='agent> '
+fi
+
+# --preview: show the selected pane's recent output. Target is field 7 (session:window.pane).
+fzf_preview=()
+if [[ "$do_preview" == "1" ]]; then
+  fzf_preview=(
+    --preview "tmux display-message -p -t {7} '#{session_name}:#{window_index}.#{pane_index}  #{pane_current_command}  #{pane_current_path}'; echo; tmux capture-pane -e -p -J -t {7} -S -100 2>/dev/null | tail -n 100"
+    --preview-window 'right,60%,border-left'
+  )
+fi
+
 selection="$(
-  awk -F '\t' -v current_pane="$current_pane" -v menu_width="$menu_width" -v worktree_cache_file="$worktree_cache_file" '
+  awk -F '\t' -v current_pane="$current_pane" -v menu_width="$menu_width" -v worktree_cache_file="$worktree_cache_file" -v agents_only="$agents_only" '
       BEGIN {
         title_width = 56
         context_width = 28
@@ -168,6 +193,11 @@ selection="$(
         pane_id = clean($11)
         last_used = clean($12) + 0
 
+        # --agents-only: keep only panes an agent hook has tagged with @agent_title.
+        if (agents_only && agent == "") {
+          next
+        }
+
         title = best_title(agent, pane, window, command)
         cache_index = best_cache_index(cwd)
         if (cache_index > 0) {
@@ -181,7 +211,7 @@ selection="$(
         combined = tolower(agent " " pane " " window " " command)
         current_rank = (pane_id == current_pane) ? 1 : 0
 
-        if (combined ~ /action required|needs action|blocked|failed|error/ || bell) {
+        if (combined ~ /action required|needs action|blocked|failed|error|attention/ || index(combined, "🔔") > 0 || bell) {
           priority = 0
           marker = "[!]"
         } else if (activity) {
@@ -213,7 +243,8 @@ selection="$(
       --no-sort \
       --reverse \
       --cycle \
-      --prompt='pane> ' \
+      --prompt="$fzf_prompt" \
+      "${fzf_preview[@]+"${fzf_preview[@]}"}" \
       --header=$'Enter: switch  Esc: cancel  attention first, newest within each group\nstate  title                                                    | branch/worktree              | pull request | target'
 )"
 

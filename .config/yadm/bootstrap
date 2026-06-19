@@ -499,3 +499,11 @@ fi
 
 echo "Installing tmux plugins"
 ~/.tmux/plugins/tpm/bin/install_plugins
+
+# Apply tracked Claude Code tmux-title hooks into the machine-local settings.json
+# (settings.json is not tracked; only the hooks fragment is). The yadm post_pull
+# hook keeps this in sync on subsequent pulls.
+if [ -x "$HOME/bin/claude-apply-tmux-hooks" ]; then
+    echo "Applying Claude Code tmux hooks"
+    "$HOME/bin/claude-apply-tmux-hooks" || echo "Warning: failed to apply Claude hooks"
+fi

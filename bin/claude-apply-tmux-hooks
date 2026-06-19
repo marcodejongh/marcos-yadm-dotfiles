@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# claude-apply-tmux-hooks
+#
+# Merge the tracked Claude Code tmux-title hooks (version-controlled via yadm in
+# ~/.config/claude/tmux-hooks.json) into the machine-local ~/.claude/settings.json.
+#
+# settings.json itself is intentionally NOT tracked by yadm because it carries
+# per-machine state (model, theme, plugins, aloc-managed hook paths). This keeps
+# only the shared tmux hooks in version control and re-applies them after pull.
+#
+# Idempotent: existing claude-tmux-title hook groups are removed and replaced
+# with the tracked definition; any other hooks (e.g. aloc-managed Bash hooks)
+# are preserved. Safe to run by hand at any time.
+#
+# Invoked automatically by the yadm post_pull hook and by the yadm bootstrap.
+set -euo pipefail
+
+claude_home="${CLAUDE_HOME:-$HOME/.claude}"
+settings="$claude_home/settings.json"
+fragment="${XDG_CONFIG_HOME:-$HOME/.config}/claude/tmux-hooks.json"
+
+# Nothing to apply if the tracked fragment is missing.
+[ -f "$fragment" ] || exit 0
+
+# Only touch settings on machines that actually run Claude Code (binary present
+# or a settings file already exists). Avoids creating config elsewhere.
+if ! command -v claude >/dev/null 2>&1 && [ ! -f "$settings" ]; then
+  exit 0
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+  echo "claude-apply-tmux-hooks: jq not found, skipping" >&2
+  exit 0
+fi
+
+mkdir -p "$claude_home"
+[ -f "$settings" ] || printf '{}\n' > "$settings"
+
+tmp="$(mktemp "${TMPDIR:-/tmp}/claude-settings.XXXXXX")"
+trap 'rm -f "$tmp"' EXIT
+
+# For each event in the fragment: drop any existing group that runs
+# claude-tmux-title, then append the tracked group(s). Other groups are kept.
+if ! jq --slurpfile frag "$fragment" '
+  .hooks = (.hooks // {})
+  | reduce ($frag[0] | to_entries[]) as $e (.;
+      .hooks[$e.key] = (
+        ((.hooks[$e.key] // [])
+          | map(select(
+              ([.hooks[]? | .command // ""] | map(test("claude-tmux-title")) | any) | not
+            )))
+        + $e.value
+      )
+    )
+' "$settings" > "$tmp"; then
+  echo "claude-apply-tmux-hooks: jq merge failed (settings.json invalid?); leaving it unchanged" >&2
+  exit 0
+fi
+
+if [ ! -s "$tmp" ]; then
+  echo "claude-apply-tmux-hooks: empty merge result; leaving settings unchanged" >&2
+  exit 0
+fi
+
+if cmp -s "$tmp" "$settings"; then
+  echo "claude-apply-tmux-hooks: $settings already up to date"
+else
+  mv "$tmp" "$settings"
+  echo "claude-apply-tmux-hooks: updated $settings"
+fi

@@ -1,0 +1,26 @@
+{
+  "SessionStart": [
+    { "hooks": [ { "type": "command", "command": "$HOME/bin/claude-tmux-title idle", "timeout": 10 } ] }
+  ],
+  "UserPromptSubmit": [
+    { "hooks": [ { "type": "command", "command": "$HOME/bin/claude-tmux-title working generate", "timeout": 60 } ] }
+  ],
+  "PreToolUse": [
+    { "hooks": [ { "type": "command", "command": "$HOME/bin/claude-tmux-title working", "timeout": 10 } ] }
+  ],
+  "PostToolUse": [
+    { "hooks": [ { "type": "command", "command": "$HOME/bin/claude-tmux-title working", "timeout": 10 } ] }
+  ],
+  "PermissionRequest": [
+    { "hooks": [ { "type": "command", "command": "$HOME/bin/claude-tmux-title attention", "timeout": 10 } ] }
+  ],
+  "Notification": [
+    { "hooks": [ { "type": "command", "command": "$HOME/bin/claude-tmux-title attention", "timeout": 10 } ] }
+  ],
+  "Stop": [
+    { "hooks": [ { "type": "command", "command": "$HOME/bin/claude-tmux-title idle", "timeout": 10 } ] }
+  ],
+  "SessionEnd": [
+    { "hooks": [ { "type": "command", "command": "$HOME/bin/claude-tmux-title idle", "timeout": 10 } ] }
+  ]
+}

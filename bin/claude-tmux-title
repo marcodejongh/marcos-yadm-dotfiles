@@ -94,7 +94,7 @@ brief_session_title() {
         add_word(fallback[i])
       }
 
-      print out == "" ? "New Session" : out
+      print (out == "" ? "New Session" : out)
     }
 
     function add_word(word, candidate) {
@@ -340,7 +340,7 @@ apply_tmux_title() {
   tmux set-option -p -t "$TMUX_PANE" @agent_title "$title" 2>/dev/null || true
   tmux set-option -p -t "$TMUX_PANE" @claude_title "$title" 2>/dev/null || true
 
-  pane_border_format=" #{?#{!=:#{@agent_title},},#{@agent_title},#{?#{!=:#{@codex_title},},#{@codex_title},#{?#{!=:#{@claude_title},},#{@claude_title},#($HOME/.tmux/plugins/tmux-peacock/scripts/pane-title-colored.py '#{q:pane_current_path}')}}} "
+  pane_border_format=" #{?#{!=:#{@agent_title},},#{@agent_title},#{?#{!=:#{@codex_title},},#{@codex_title},#{?#{!=:#{@claude_title},},#{@claude_title},#{?#{!=:#{@rovo_title},},#{@rovo_title},#($HOME/.tmux/plugins/tmux-peacock/scripts/pane-title-colored.py '#{q:pane_current_path}')}}}} "
   tmux set-option -g pane-border-format "$pane_border_format" 2>/dev/null || true
 
   window_target="$(tmux display-message -p -t "$TMUX_PANE" '#{session_name}:#{window_index}' 2>/dev/null || true)"

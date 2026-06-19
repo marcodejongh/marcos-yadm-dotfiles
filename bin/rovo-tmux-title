@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+set -u
+
+# rovo-tmux-title — Rovo Dev (acli rovodev) tmux status hook.
+#
+# Mirrors claude-tmux-title / codex-tmux-title: pushes the agent's lifecycle
+# state into tmux pane options (@agent_title / @rovo_title), the pane title,
+# the global pane-border-format, and the window name. Those options are read by
+# ~/bin/tmux-pane-switcher (the M-w / prefix+t picker) and the pane border.
+#
+# Usage (from ~/.rovodev/config.yml eventHooks):
+#   rovo-tmux-title <state> [generate]
+#     state: idle | working | attention   (default: idle)
+# Rovo passes the event payload as JSON on stdin. A second "generate" arg is
+# accepted for parity with the claude/codex scripts but is currently a no-op
+# (AI-generated titles can be wired up later, like codex_session_source).
+
+if [[ -z "${TMUX:-}" || -z "${TMUX_PANE:-}" ]]; then
+  exit 0
+fi
+
+if [[ -t 0 ]]; then
+  hook_input=""
+else
+  hook_input="$(cat 2>/dev/null || true)"
+fi
+
+state="${1:-idle}"
+
+normalize_title() {
+  tr '\n\r\t' '   ' | sed -E 's/[[:space:]]+/ /g; s/^ //; s/ $//'
+}
+
+json_get() {
+  local filter="$1"
+
+  [[ -n "$hook_input" ]] || return 1
+  command -v jq >/dev/null 2>&1 || return 1
+  printf "%s" "$hook_input" | jq -er "$filter // empty" 2>/dev/null
+}
+
+workspace_window_title() {
+  local cwd="$1"
+  local root
+  local base
+
+  [[ -n "$cwd" ]] || cwd="$PWD"
+
+  if command -v git >/dev/null 2>&1; then
+    root="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || true)"
+  fi
+
+  [[ -n "${root:-}" ]] || root="$cwd"
+  if [[ "${root%/}" == "${HOME%/}" ]]; then
+    printf "~\n"
+    return
+  fi
+
+  base="$(basename "$root")"
+
+  if [[ "$base" == .* ]]; then
+    base="$(basename "$(dirname "$root")")"
+  fi
+
+  [[ -n "$base" && "$base" != "/" ]] || base="workspace"
+  printf "%s\n" "$base"
+}
+
+apply_tmux_title() {
+  local state="$1"
+  local title_base="$2"
+  local cwd="$3"
+  local title
+  local window_title
+  local window_target
+  local pane_border_format
+
+  case "$state" in
+    working)
+      title="rovo [working]: $title_base"
+      ;;
+    attention)
+      title="🔔 rovo: $title_base"
+      ;;
+    idle | *)
+      title="rovo: $title_base"
+      ;;
+  esac
+
+  tmux select-pane -t "$TMUX_PANE" -T "$title" 2>/dev/null || true
+  tmux set-option -p -t "$TMUX_PANE" @agent_title "$title" 2>/dev/null || true
+  tmux set-option -p -t "$TMUX_PANE" @rovo_title "$title" 2>/dev/null || true
+
+  pane_border_format=" #{?#{!=:#{@agent_title},},#{@agent_title},#{?#{!=:#{@codex_title},},#{@codex_title},#{?#{!=:#{@claude_title},},#{@claude_title},#{?#{!=:#{@rovo_title},},#{@rovo_title},#($HOME/.tmux/plugins/tmux-peacock/scripts/pane-title-colored.py '#{q:pane_current_path}')}}}} "
+  tmux set-option -g pane-border-format "$pane_border_format" 2>/dev/null || true
+
+  window_target="$(tmux display-message -p -t "$TMUX_PANE" '#{session_name}:#{window_index}' 2>/dev/null || true)"
+  if [[ -n "$window_target" ]]; then
+    window_title="$(workspace_window_title "$cwd")"
+    tmux rename-window -t "$window_target" "$window_title" 2>/dev/null || true
+  fi
+}
+
+hook_cwd="$(json_get '.cwd' 2>/dev/null || true)"
+hook_cwd="${hook_cwd:-$PWD}"
+payload_title="$(json_get '.title' 2>/dev/null || true)"
+
+if [[ -n "$payload_title" ]]; then
+  title_base="$(printf "%s" "$payload_title" | normalize_title)"
+else
+  title_base="$("$HOME/bin/tmux-pane-title" "$hook_cwd" 2>/dev/null || basename "$hook_cwd")"
+fi
+
+apply_tmux_title "$state" "$title_base" "$hook_cwd"

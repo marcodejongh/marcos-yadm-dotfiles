@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# yadm post_pull hook: re-apply the tracked Claude Code tmux hooks into the
+# machine-local ~/.claude/settings.json after every `yadm pull`.
+# Never fail the pull because of this.
+"$HOME/bin/claude-apply-tmux-hooks" || true
