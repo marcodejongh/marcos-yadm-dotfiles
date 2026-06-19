@@ -390,17 +390,9 @@ if [ ! -d "$HOME/.zprezto/contrib/fzf-tab" ]; then
 fi
 
 
-# Platform-specific font and app installation
 if [ "$os_name" = "macos" ]; then
-    if [ ! -f "$HOME/Library/Fonts/MesloLGS NF Regular.ttf" ]; then
-        echo "Installing MesloLGS NF fonts"
-        curl -L -o "$HOME/Library/Fonts/MesloLGS NF Regular.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf
-        curl -L -o "$HOME/Library/Fonts/MesloLGS NF Bold.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
-        curl -L -o "$HOME/Library/Fonts/MesloLGS NF Italic.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
-        curl -L -o "$HOME/Library/Fonts/MesloLGS NF Bold Italic.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
-    fi
-    
-    # Check if 1Password is installed
+    # MesloLGS NF fonts are installed via the font-meslo-for-powerlevel10k cask in ~/.Brewfile
+
     if [ ! -d "/Applications/1Password.app" ]; then
         echo "Installing 1password"
         mkdir -p $HOME/tmp/yadm-bootstrap;
@@ -410,58 +402,19 @@ if [ "$os_name" = "macos" ]; then
         open -W 1Password\ Installer.app
     fi
 elif [ "$os_name" = "fedora" ] || [ "$os_name" = "ubuntu" ]; then
-    # Install 1Password desktop app and CLI on Linux
-    if [ "$os_name" = "fedora" ]; then
-        if ! command -v 1password >/dev/null 2>&1 || ! rpm -qa | grep -q 1password; then
-            echo "Installing 1Password desktop app"
-            sudo rpm --import https://downloads.1password.com/linux/keys/1password.asc
-            sudo sh -c 'cat > /etc/yum.repos.d/1password.repo << REPOEOF
-[1password]
-name=1Password Stable Channel
-baseurl=https://downloads.1password.com/linux/rpm/stable/\$basearch
-enabled=1
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://downloads.1password.com/linux/keys/1password.asc
-REPOEOF'
-            sudo dnf install -y 1password || echo "Warning: Failed to install 1Password"
-        else
-            echo "1Password desktop app already installed"
-        fi
-
-        if ! command -v op >/dev/null 2>&1; then
-            echo "Installing 1Password CLI"
-            sudo rpm --import https://downloads.1password.com/linux/keys/1password.asc
-            sudo sh -c 'cat > /etc/yum.repos.d/1password-cli.repo << REPOEOF
-[1password-cli]
-name=1Password CLI Stable Channel
-baseurl=https://downloads.1password.com/linux/rpm/stable/\$basearch
-enabled=1
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://downloads.1password.com/linux/keys/1password.asc
-REPOEOF'
-            sudo dnf install -y 1password-cli || echo "Warning: Failed to install 1Password CLI"
-        else
-            echo "1Password CLI already installed"
-        fi
-    fi
-
-    # Install MesloLGS NF fonts on Linux
     font_dir="$HOME/.local/share/fonts"
     mkdir -p "$font_dir"
-    
+
     if [ ! -f "$font_dir/MesloLGS NF Regular.ttf" ]; then
         echo "Installing MesloLGS NF fonts"
         curl -L -o "$font_dir/MesloLGS NF Regular.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf
         curl -L -o "$font_dir/MesloLGS NF Bold.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
         curl -L -o "$font_dir/MesloLGS NF Italic.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
         curl -L -o "$font_dir/MesloLGS NF Bold Italic.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
-        
-        # Refresh font cache
+
         fc-cache -f -v
     fi
-fi 
+fi
 
 if yadm remote get-url origin | grep -q -v 'git@github.com:marcodejongh/marcos-yadm-dotfiles.git'; then
     echo "Detected raw yadm checkout, performing yadm admin"

@@ -424,3 +424,4 @@ if [[ -o interactive && -z "${TMUX:-}" && -z "${TMUX_MAIN_NO_AUTO_ATTACH:-}" && 
     exec tmux new-session -A -s main
   fi
 fi
+export PATH="$HOME/.local/bin:$PATH"
