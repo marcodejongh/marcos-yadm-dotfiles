@@ -82,7 +82,7 @@ fzf_preview=()
 if [[ "$do_preview" == "1" ]]; then
   fzf_preview=(
     --preview "tmux display-message -p -t {7} '#{session_name}:#{window_index}.#{pane_index}  #{pane_current_command}  #{pane_current_path}'; echo; tmux capture-pane -e -p -J -t {7} -S -100 2>/dev/null | tail -n 100"
-    --preview-window 'right,60%,border-left'
+    --preview-window 'right,60%,border-left,follow'
   )
 fi
 
